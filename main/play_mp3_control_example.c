@@ -7366,11 +7366,11 @@ void Add_FR_First()
                             DB_PR("database_cw_adm.changqi_tmp= %d \r\n",database_cw_adm.changqi_tmp);
                             if(database_cw_adm.changqi_tmp == 0)
                             {
-                                xTaskCreate(Add_FR, "add_zhiwen_task2", 4* 1024, NULL, 2, NULL);//1024 10
+                                xTaskCreate(Add_FR, "add_zhiwen_task2", 6* 1024, NULL, 2, NULL);//1024 10
                             }
                             else
                             {
-                                xTaskCreate(Add_FR_CQ, "add_zhiwen_task2", 4* 1024, NULL, 2, NULL);//1024 10
+                                xTaskCreate(Add_FR_CQ, "add_zhiwen_task2", 6* 1024, NULL, 2, NULL);//1024 10
                             }
                             xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_CL, 10, NULL);
                             
