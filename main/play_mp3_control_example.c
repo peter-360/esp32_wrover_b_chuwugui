@@ -7447,7 +7447,7 @@ void Add_FR_First()
 //录指纹  2
 void Add_FR()
 {
-    DB_PR("---------gpio_get_level(GPIO_INPUT_IO_ZW_JC)=%d---------\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
+    DB_PR("-----CW ZW ADD----gpio_get_level(GPIO_INPUT_IO_ZW_JC)=%d---------\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
     
     // audio_pipeline_stop(pipeline);
     // audio_pipeline_wait_for_stop(pipeline);
@@ -7459,35 +7459,40 @@ void Add_FR()
     // audio_element_set_uri(tone_stream_reader, tone_uri[TONE_TYPE_CL]);
     // audio_pipeline_run(pipeline);
 
-
+    // delay_ms(2000);
 
     //return_cause_zw=0;
-//     u8 zw_likai_flag=0;
-//     for(uint16_t i=0;i<50;i++)//
-// 	{
-//         DB_PR("---------gpio_get_level(GPIO_INPUT_IO_ZW_JC)=%d---------\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_2));
-//         if((gpio_get_level(GPIO_INPUT_IO_ZW_2)==0) &&(i==2))//
-//         {
-//             DB_PR("------------finger move ok----------\r\n");
-//             //io_shouzhi_down_flag =0;
-//             zw_likai_flag =1;
-//             break;
-//         }
-//         delay_ms(200);
-//         DB_PR("------------wait for finger move----------\r\n");
+    bool zw_likai_flag=0;
+    for(uint16_t i=0;i<10;i++)//
+	{
+        DB_PR("---------gpio_get_level(GPIO_INPUT_IO_ZW_JC)=%d---------\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
+        if((gpio_get_level(GPIO_INPUT_IO_ZW_JC)==0) )//&&(i==2)
+        {
+            DB_PR("------------finger move ok----------\r\n");
+            //io_shouzhi_down_flag =0;
+            zw_likai_flag =1;
+            break;
+        }
+        else
+        {
+            delay_ms(1000);
+            DB_PR("------------wait for finger move----------\r\n");
+        }
 
-//     }
-//     if(zw_likai_flag == 0)
-//     {
-//         vTaskDelay(1);
-//         DB_PR("----a----shouzhi move timeout--------\r\n");
-//         vTaskDelete(NULL);
-//     }
-//     else
-//     {
-//         DB_PR("-----b------shouzhi move ok, continue-----------\r\n");
-//         /* code */
-//     }
+
+    }
+    if(zw_likai_flag == 0)
+    {
+        send_cmd_to_lcd_pic(0x004C);
+        vTaskDelay(1);
+        DB_PR("----a----shouzhi move timeout--------\r\n");
+        vTaskDelete(NULL);
+    }
+    else
+    {
+        DB_PR("-----b------shouzhi move ok, continue-----------\r\n");
+        /* code */
+    }
     
     
     // if(processnum_first_ok ==1)
@@ -7496,6 +7501,8 @@ void Add_FR()
     //     DB_PR("---zhiwen connect fail\r\n");
     //     return;
     // }
+
+
 	u8 i=0,ensure=0 ,processnum=1;
     // u8 ensure_2=0,ensure_3=0;
     SearchResult p_rsp;
@@ -8119,7 +8126,42 @@ done_zwc_fail:
 void Add_FR_CQ()
 {
     //fpc_down
-    DB_PR("---------gpio_get_level(GPIO_INPUT_IO_ZW_JC)=%d---------\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
+    DB_PR("----CQ ZW ADD-----gpio_get_level(GPIO_INPUT_IO_ZW_JC)=%d---------\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
+    
+    bool zw_likai_flag=0;
+    for(uint16_t i=0;i<10;i++)//
+	{
+        DB_PR("---------gpio_get_level(GPIO_INPUT_IO_ZW_JC)=%d---------\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
+        if((gpio_get_level(GPIO_INPUT_IO_ZW_JC)==0) )//&&(i==2)
+        {
+            DB_PR("------------finger move ok----------\r\n");
+            //io_shouzhi_down_flag =0;
+            zw_likai_flag =1;
+            break;
+        }
+        else
+        {
+            delay_ms(1000);
+            DB_PR("------------wait for finger move----------\r\n");
+        }
+
+    }
+    if(zw_likai_flag == 0)
+    {
+        send_cmd_to_lcd_pic(0x004C);
+        vTaskDelay(1);
+        DB_PR("----a----shouzhi move timeout--------\r\n");
+        vTaskDelete(NULL);
+    }
+    else
+    {
+        DB_PR("-----b------shouzhi move ok, continue-----------\r\n");
+        /* code */
+    }
+    
+    
+    
+    
     //return_cause_zw =0;
     // if(HandShakeFlag ==1)
     // {
@@ -9882,7 +9924,7 @@ static void gpio_task_example1(void* arg)
 		if(tick_times%100==0)
 		{
             DB_PR("------------system heart-----------\r\n");
-            DB_PR("----gpio_get_level(GPIO_INPUT_IO_ZW_JC)=%d----\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
+            DB_PR("----GPIO_INPUT_IO_ZW_JC=%d----\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
             if(led_green_state == 0)
             {
                 // DB_PR("------------gr led on-----------\r\n");
