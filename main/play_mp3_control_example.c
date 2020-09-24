@@ -236,14 +236,18 @@ const char *TAG = "uart_events";
 #define LED_RED         (GPIO_NUM_27)
 
 
+
+#define GPIO_OUPUT_IO_2G_RST     GPIO_NUM_19//35//5
+#define GPIO_OUPUT_IO_PA_CTL     GPIO_NUM_4
+
 // #define GPIO_INPUT_IO_ZW_2     (4)
 
 #define GPIO_INPUT_IO_ADMIN     39//4
-// #define GPIO_INPUT_IO_ZW_JC     35//5
-#define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_ADMIN))
+#define GPIO_INPUT_IO_ZW_JC     21//35//5
+#define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_ADMIN)  )
 #define ESP_INTR_FLAG_DEFAULT 0
-// | (1ULL<<GPIO_INPUT_IO_ZW_JC))
-
+// | (1ULL<<GPIO_INPUT_IO_ZW_JC)
+#define GPIO_INPUT_ZWJC_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_ZW_JC)  )
 
 bool HandShakeFlag = 0;
 bool io_shouzhi_down_flag = 0;
@@ -7443,7 +7447,7 @@ void Add_FR_First()
 //录指纹  2
 void Add_FR()
 {
-
+    DB_PR("---------gpio_get_level(GPIO_INPUT_IO_ZW_JC)=%d---------\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
     
     // audio_pipeline_stop(pipeline);
     // audio_pipeline_wait_for_stop(pipeline);
@@ -8114,6 +8118,8 @@ done_zwc_fail:
 //录指纹
 void Add_FR_CQ()
 {
+    //fpc_down
+    DB_PR("---------gpio_get_level(GPIO_INPUT_IO_ZW_JC)=%d---------\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
     //return_cause_zw =0;
     // if(HandShakeFlag ==1)
     // {
@@ -9083,14 +9089,14 @@ void es7134_pa_power(bool enable)
     memset(&io_conf, 0, sizeof(io_conf));
     io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pin_bit_mask = BIT64(GPIO_NUM_4);
+    io_conf.pin_bit_mask = BIT64(GPIO_OUPUT_IO_PA_CTL);
     io_conf.pull_down_en = 0;
     io_conf.pull_up_en = 0;
     gpio_config(&io_conf);
     if (enable) {
-        gpio_set_level(GPIO_NUM_4, 1);
+        gpio_set_level(GPIO_OUPUT_IO_PA_CTL, 1);
     } else {
-        gpio_set_level(GPIO_NUM_4, 0);
+        gpio_set_level(GPIO_OUPUT_IO_PA_CTL, 0);
     }
 }
 
@@ -9721,7 +9727,7 @@ esp_err_t alink_key_scan(TickType_t ticks_to_wait) {
 #include "esp_smartconfig.h"//sc_event
 void key_trigger(void *arg) {
 	esp_err_t ret = 0;
-	KeyInit(KEY_GPIO);
+	KeyInit(KEY_GPIO);//-----------------
     DB_PR("------------ key_trigger  -----------\r\n");
 	while (1) {
         vTaskDelay(10 / portTICK_PERIOD_MS);
@@ -9876,6 +9882,7 @@ static void gpio_task_example1(void* arg)
 		if(tick_times%100==0)
 		{
             DB_PR("------------system heart-----------\r\n");
+            DB_PR("----gpio_get_level(GPIO_INPUT_IO_ZW_JC)=%d----\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
             if(led_green_state == 0)
             {
                 // DB_PR("------------gr led on-----------\r\n");
@@ -11017,8 +11024,10 @@ void app_main(void)
         read_nvs_guizi_all();
         //send_cmd_to_lcd_pic(KAIJI_PIC);
     }
+
     
-    DB_PR("切换到开机画面!!!\r\n");
+    
+    
 
     gpio_pad_select_gpio(RE_485_GPIO);
     /* Set the GPIO as a push/pull output */
@@ -11026,14 +11035,20 @@ void app_main(void)
     
     
 
-    //todo 4G DTU
-    gpio_pad_select_gpio(ECHO_TEST3_TXD);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(ECHO_TEST3_TXD, GPIO_MODE_DISABLE);
+    // //todo 2G DTU
+    // gpio_pad_select_gpio(ECHO_TEST3_TXD);//->GPIO_OUPUT_IO_2G_RST
+    // /* Set the GPIO as a push/pull output */
+    // gpio_set_direction(ECHO_TEST3_TXD, GPIO_MODE_DISABLE);
 
-    gpio_pad_select_gpio(ECHO_TEST3_RXD);
+    // gpio_pad_select_gpio(ECHO_TEST3_RXD);//->yinpin PA ctl
+    // /* Set the GPIO as a push/pull output */
+    // gpio_set_direction(ECHO_TEST3_RXD, GPIO_MODE_DISABLE);
+
+    gpio_pad_select_gpio(GPIO_OUPUT_IO_2G_RST);
     /* Set the GPIO as a push/pull output */
-    gpio_set_direction(ECHO_TEST3_RXD, GPIO_MODE_DISABLE);
+    gpio_set_direction(GPIO_OUPUT_IO_2G_RST, GPIO_MODE_OUTPUT);
+    gpio_set_level(GPIO_OUPUT_IO_2G_RST, 1);
+
 
 
 
@@ -11060,6 +11075,22 @@ void app_main(void)
 
     xTaskCreate(gpio_task_example1, "gpio_task_example1", 2048, NULL, 10, &taskhandle_temp);
 
+
+    if(shengyu_all_max>SHENYU_GEZI_MAX)
+    {
+        //-------todo pic  sound, red led
+        gpio_set_level(LED_RED, 0);
+        DB_PR("--err--shengyu_all_max>SHENYU_GEZI_MAX!!!\r\n");
+    }
+    else
+    {
+        DB_PR("--ok--will power on--------切换到开机画面!!!\r\n");
+    }
+
+
+
+
+
     // gpio_pad_select_gpio(emac->int_gpio_num);
     // gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
     // gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLDOWN_ONLY);
@@ -11073,7 +11104,13 @@ void app_main(void)
     // gpio_set_pull_mode(GPIO_INPUT_IO_ZW_2,GPIO_PULLUP_ONLY);//GPIO_PULLUP_ONLY
 
 
-
+    gpio_config_t io_conf;
+    io_conf.intr_type    = GPIO_PIN_INTR_DISABLE;
+    io_conf.mode         = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = GPIO_INPUT_ZWJC_PIN_SEL;//(1ULL << GPIO_INPUT_IO_ZW_JC);
+    io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;//GPIO_PULLDOWN_DISABLE todo--------
+    io_conf.pull_up_en   = GPIO_PULLUP_DISABLE;
+    gpio_config(&io_conf);
 
     DB_PR("-----gpio init----- ... \r\n");
 
@@ -11204,6 +11241,20 @@ void app_main(void)
 
 
 
+    DB_PR("\n\n-------------------------------- Get Systrm Info------------------------------------------\n");
+    //获取IDF版本
+    DB_PR("     SDK version:%s\n", esp_get_idf_version());
+    //获取芯片可用内存
+    DB_PR("     esp_get_free_heap_size : %d  \n", esp_get_free_heap_size());
+    //获取从未使用过的最小内存
+    DB_PR("     esp_get_minimum_free_heap_size : %d  \n", esp_get_minimum_free_heap_size());
+    // //获取芯片的内存分布，返回值具体见结构体 flash_size_map
+    // DB_PR("     system_get_flash_size_map(): %d \n", system_get_flash_size_map());
+    //获取mac地址（station模式）
+    uint8_t mac[6];
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    DB_PR("esp_read_mac(): %02x:%02x:%02x:%02x:%02x:%02x \n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    DB_PR("--------------------------------------------------------------------------\n\n");
 
 
     // audio_init();
@@ -11236,6 +11287,8 @@ void app_main(void)
 
     // vTaskDelay(4000 / portTICK_PERIOD_MS);
     // xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, 5, NULL);
+
+
 
 
 
