@@ -96,6 +96,8 @@ TaskHandle_t taskhandle_temp_wifi= NULL;
 TaskHandle_t taskhandle_mp3 = NULL;
 TaskHandle_t taskhandle_uart2 = NULL;
 esp_timer_handle_t oneshot_timer;
+
+bool sys_running_flag;
 bool wifi_connected_flag;
 u8 wifi_peiwang_over_flag;
 
@@ -9926,29 +9928,38 @@ static void gpio_task_system(void* arg)
         vTaskDelay(10 / portTICK_PERIOD_MS);//on 
 		if(tick_times%100==0)
 		{
-            DB_PR("------------system heart-----------\r\n");
-            DB_PR("----GPIO_INPUT_IO_ZW_JC=%d----\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
-            if(led_green_state == 0)
-            {
-                // DB_PR("------------gr led on-----------\r\n");
-                led_green_state =1;
-                //---------system state----------
-                // vTaskDelay(1000 / portTICK_PERIOD_MS);//on 
-                // gpio_set_level(LED_BLUE, 0);
-                gpio_set_level(LED_GRREN, 0);
-                // gpio_set_level(LED_RED, 0);
-            }
-            else if(led_green_state == 1)
-            {
-                // DB_PR("------------gr led off-----------\r\n");
-                led_green_state =0;
-                // vTaskDelay(1000 / portTICK_PERIOD_MS);//off del
-                // gpio_set_level(LED_BLUE, 1);
-                gpio_set_level(LED_GRREN, 1);
-                // gpio_set_level(LED_RED, 1);
-            }
-            // DB_PR("\r\n");
 
+            if(0==sys_running_flag)
+            {
+                if(led_green_state == 0)
+                {
+                    // DB_PR("------------gr led on-----------\r\n");
+                    led_green_state =1;
+                    //---------system state----------
+                    // vTaskDelay(1000 / portTICK_PERIOD_MS);//on 
+                    // gpio_set_level(LED_BLUE, 0);
+                    gpio_set_level(LED_GRREN, 0);
+                    // gpio_set_level(LED_RED, 0);
+                }
+                else if(led_green_state == 1)
+                {
+                    // DB_PR("------------gr led off-----------\r\n");
+                    led_green_state =0;
+                    // vTaskDelay(1000 / portTICK_PERIOD_MS);//off del
+                    // gpio_set_level(LED_BLUE, 1);
+                    gpio_set_level(LED_GRREN, 1);
+                    // gpio_set_level(LED_RED, 1);
+                }
+                // DB_PR("\r\n");
+
+            }
+            else
+            {
+                DB_PR("------------system heart-----------\r\n");
+                DB_PR("----GPIO_INPUT_IO_ZW_JC=%d----\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
+            }
+            
+            
 		}
 
     }
@@ -9972,26 +9983,36 @@ static void gpio_task_example_wifi(void* arg)
 
 		if(tick_times%wifi_led_duration_time==0)
         {
-            if(led_blue_state == 0)
+            if(0==wifi_connected_flag)
             {
-                // DB_PR("------------bl led on-----------\r\n");
-                led_blue_state =1;
-                //---------wifi state----------
-                // vTaskDelay(wifi_led_duration_time / portTICK_PERIOD_MS);//on 
-                gpio_set_level(LED_BLUE, 0);
-                // gpio_set_level(LED_GRREN, 0);
-                // gpio_set_level(LED_RED, 0);
+                if(led_blue_state == 0)
+                {
+                    // DB_PR("------------bl led on-----------\r\n");
+                    led_blue_state =1;
+                    //---------wifi state----------
+                    // vTaskDelay(wifi_led_duration_time / portTICK_PERIOD_MS);//on 
+                    gpio_set_level(LED_BLUE, 0);
+                    // gpio_set_level(LED_GRREN, 0);
+                    // gpio_set_level(LED_RED, 0);
+                }
+                else if(led_blue_state == 1)
+                {
+                    // DB_PR("------------bl led off-----------\r\n");
+                    led_blue_state =0;
+                    // vTaskDelay(wifi_led_duration_time / portTICK_PERIOD_MS);//off del
+                    gpio_set_level(LED_BLUE, 1);
+                    // gpio_set_level(LED_GRREN, 1);
+                    // gpio_set_level(LED_RED, 1);
+                }
+                // DB_PR("\r\n");
+
             }
-            else if(led_blue_state == 1)
+            else
             {
-                // DB_PR("------------bl led off-----------\r\n");
-                led_blue_state =0;
-                // vTaskDelay(wifi_led_duration_time / portTICK_PERIOD_MS);//off del
-                gpio_set_level(LED_BLUE, 1);
-                // gpio_set_level(LED_GRREN, 1);
-                // gpio_set_level(LED_RED, 1);
+                /* code */
             }
-            // DB_PR("\r\n");
+            
+
 
         }
 
@@ -10055,8 +10076,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         // xTaskCreate(smartconfig_example_task, "smartconfig_example_task", 4096, NULL, 3, NULL);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         // wifi_led_duration_time =200;
-        xTaskCreate(gpio_task_example_wifi, "gpio_task_example_wifi", 2048, NULL, 10, &taskhandle_temp_wifi);
-
+        // xTaskCreate(gpio_task_example_wifi, "gpio_task_example_wifi", 2048, NULL, 10, &taskhandle_temp_wifi);
         wifi_connected_flag =0;
         DB_PR("-2-wifi_connected_flag =%d-----.\r\n",wifi_connected_flag);
 
@@ -10099,7 +10119,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
 
         // wifi_led_duration_time =20;
-        vTaskDelete(taskhandle_temp_wifi);
+        // vTaskDelete(taskhandle_temp_wifi);
         gpio_set_level(LED_BLUE, 0);
         wifi_connected_flag =1;
         DB_PR("-1-wifi_connected_flag =%d-----.\r\n",wifi_connected_flag);
@@ -11363,7 +11383,8 @@ void app_main(void)
     vTaskDelay(3000 / portTICK_PERIOD_MS);//on 
 
 
-    vTaskDelete(taskhandle_system);
+    // vTaskDelete(taskhandle_system);
+    sys_running_flag =1;
     gpio_set_level(LED_GRREN, 0);//changliang
 
     initialise_wifi();
