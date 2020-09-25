@@ -91,14 +91,15 @@ void audio_init(void);
 void close_mp3(void);
 
 TaskHandle_t taskhandle1= NULL;
-TaskHandle_t taskhandle_temp= NULL;
+TaskHandle_t taskhandle_system= NULL;
+TaskHandle_t taskhandle_temp_wifi= NULL;
 TaskHandle_t taskhandle_mp3 = NULL;
 TaskHandle_t taskhandle_uart2 = NULL;
 esp_timer_handle_t oneshot_timer;
 bool wifi_connected_flag;
 u8 wifi_peiwang_over_flag;
 
-u16 wifi_led_duration_time=500;
+u16 wifi_led_duration_time=20;
 
 
 u8 audio_play_mp3_over;
@@ -2667,7 +2668,7 @@ static void echo_task2()//lcd
                                         if((shengyu_all_max_temp>0)
                                             &&(shengyu_all_max_temp<=SHENYU_GEZI_MAX))
                                         {
-                                            xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A011_GMSET_ONGO, 10, (TaskHandle_t* )&taskhandle_mp3);
+                                            // xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A011_GMSET_ONGO, 10, (TaskHandle_t* )&taskhandle_mp3);
                                             DB_PR("2-------shengyu_all_max_temp=%03d\r\n",shengyu_all_max_temp);
                                             shengyu_all_max = shengyu_all_max_temp;
                                             // memcpy(guimen_x_gk_max,guimen_x_gk_max_temp,BOARD_GK_MAX);//????????
@@ -3805,7 +3806,7 @@ guimen_set_fail:
                                 // // TaskStatus_t TaskStatus;
                                 // eTaskState TaskState;
 
-                                // TaskHandle=xTaskGetHandle("gpio_task_example1");		//获取任务句柄（返回值任务句柄）（参数为任务名：query_task）
+                                // TaskHandle=xTaskGetHandle("gpio_task_system");		//获取任务句柄（返回值任务句柄）（参数为任务名：query_task）
                                 // TaskState=eTaskGetState(TaskHandle);			//获取任务状态函数（返回值任务状态）（参数为任务句柄：TaskHandle）
                                 // DB_PR("-------TaskState=%d--.\r\n",TaskState); 
 
@@ -9243,7 +9244,8 @@ void audio_init(void)
                     music_info.sample_rates, music_info.bits, music_info.channels);
 
             audio_element_setinfo(i2s_stream_writer, &music_info);
-            // i2s_stream_set_clk(i2s_stream_writer, music_info.sample_rates, music_info.bits, music_info.channels);
+            //------------
+            // i2s_stream_set_clk(i2s_stream_writer, music_info.sample_rates, music_info.bits, music_info.channels);//todo
             continue;
         }
 
@@ -9783,16 +9785,16 @@ void key_trigger(void *arg) {
 			DB_PR("----short-------短按触发回调 ... \r\n");
             DB_PR("------------admin mode-----------\r\n");// no print???
             send_cmd_to_lcd_pic(0x0011);
-            vTaskDelay(500 / portTICK_PERIOD_MS);
-            gpio_set_level(LED_BLUE, 0);
-            gpio_set_level(LED_GRREN, 0);
-            gpio_set_level(LED_RED, 0);
+            // vTaskDelay(500 / portTICK_PERIOD_MS);
+            // gpio_set_level(LED_BLUE, 0);
+            // gpio_set_level(LED_GRREN, 0);
+            // gpio_set_level(LED_RED, 0);
 
 
-            vTaskDelay(500 / portTICK_PERIOD_MS);
-            gpio_set_level(LED_BLUE, 1);
-            gpio_set_level(LED_GRREN, 1);
-            gpio_set_level(LED_RED, 1);
+            // vTaskDelay(500 / portTICK_PERIOD_MS);
+            // gpio_set_level(LED_BLUE, 1);
+            // gpio_set_level(LED_GRREN, 1);
+            // gpio_set_level(LED_RED, 1);
 			break;
 
 		case KEY_LONG_PRESS:
@@ -9910,9 +9912,9 @@ void key_trigger(void *arg) {
 // }
 
 
-static void gpio_task_example1(void* arg)
+static void gpio_task_system(void* arg)
 {
-    uint32_t io_num;
+    // uint32_t io_num;
     uint32_t tick_times=0;
     bool led_green_state=0;
     bool led_blue_state=0;
@@ -9949,6 +9951,24 @@ static void gpio_task_example1(void* arg)
 
 		}
 
+    }
+    vTaskDelete(NULL);
+}
+
+
+
+static void gpio_task_example_wifi(void* arg)
+{
+    // uint32_t io_num;
+    uint32_t tick_times=0;
+    bool led_green_state=0;
+    bool led_blue_state=0;
+    for(;;) 
+    {
+        
+        // DB_PR("------------system heart-----------\r\n");
+        tick_times++;
+        vTaskDelay(10 / portTICK_PERIOD_MS);//on 
 
 		if(tick_times%wifi_led_duration_time==0)
         {
@@ -9979,7 +9999,6 @@ static void gpio_task_example1(void* arg)
     }
     vTaskDelete(NULL);
 }
-
 
 
 
@@ -10035,7 +10054,9 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         DB_PR( "wifi start-2\r\n");
         // xTaskCreate(smartconfig_example_task, "smartconfig_example_task", 4096, NULL, 3, NULL);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        wifi_led_duration_time =500;
+        // wifi_led_duration_time =200;
+        xTaskCreate(gpio_task_example_wifi, "gpio_task_example_wifi", 2048, NULL, 10, &taskhandle_temp_wifi);
+
         wifi_connected_flag =0;
         DB_PR("-2-wifi_connected_flag =%d-----.\r\n",wifi_connected_flag);
 
@@ -10077,7 +10098,9 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         retry_num = 0;                                              /* WiFi重连次数清零 */
         xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
 
-        wifi_led_duration_time =20;
+        // wifi_led_duration_time =20;
+        vTaskDelete(taskhandle_temp_wifi);
+        gpio_set_level(LED_BLUE, 0);
         wifi_connected_flag =1;
         DB_PR("-1-wifi_connected_flag =%d-----.\r\n",wifi_connected_flag);
         //todo pic
@@ -10923,7 +10946,7 @@ void simple_ota_example_task(void *pvParameter)
     // if(audio_play_mp3_stop == 0)//audio_play_mp3_stop debug
     if(update_sta == 1)//audio_play_mp3_stop
     {
-        wifi_led_duration_time =8;
+        // wifi_led_duration_time =8;
         DB_PR(  "Starting OTA example\r\n");
         send_cmd_to_lcd_pic(0x0057);
 
@@ -11000,6 +11023,91 @@ void simple_ota_example_task(void *pvParameter)
     
 }
 
+void gpio_int()
+{
+
+    DB_PR("-----gpio init----- ... \r\n");
+
+    gpio_pad_select_gpio(RE_485_GPIO);
+    /* Set the GPIO as a push/pull output */
+    gpio_set_direction(RE_485_GPIO, GPIO_MODE_OUTPUT);
+    
+    
+
+    // //todo 2G DTU
+    // gpio_pad_select_gpio(ECHO_TEST3_TXD);//->GPIO_OUPUT_IO_2G_RST
+    // /* Set the GPIO as a push/pull output */
+    // gpio_set_direction(ECHO_TEST3_TXD, GPIO_MODE_DISABLE);
+
+    // gpio_pad_select_gpio(ECHO_TEST3_RXD);//->yinpin PA ctl
+    // /* Set the GPIO as a push/pull output */
+    // gpio_set_direction(ECHO_TEST3_RXD, GPIO_MODE_DISABLE);
+
+    gpio_pad_select_gpio(GPIO_OUPUT_IO_2G_RST);
+    /* Set the GPIO as a push/pull output */
+    gpio_set_direction(GPIO_OUPUT_IO_2G_RST, GPIO_MODE_OUTPUT);
+    gpio_set_level(GPIO_OUPUT_IO_2G_RST, 1);
+
+
+
+
+
+    RS485_RX_EN();//RS485_TX_EN();
+
+
+
+    gpio_pad_select_gpio(LED_BLUE);
+    /* Set the GPIO as a push/pull output */
+    gpio_set_direction(LED_BLUE, GPIO_MODE_OUTPUT);
+    gpio_set_level(LED_BLUE, 1);
+
+
+    gpio_pad_select_gpio(LED_GRREN);
+    /* Set the GPIO as a push/pull output */
+    gpio_set_direction(LED_GRREN, GPIO_MODE_OUTPUT);
+    gpio_set_level(LED_GRREN, 1);
+
+
+    gpio_pad_select_gpio(LED_RED);
+    /* Set the GPIO as a push/pull output */
+    gpio_set_direction(LED_RED, GPIO_MODE_OUTPUT);
+    gpio_set_level(LED_RED, 1);
+
+    xTaskCreate(gpio_task_system, "gpio_task_system", 2048, NULL, 10, &taskhandle_system);
+    xTaskCreate(gpio_task_example_wifi, "gpio_task_example_wifi", 2048, NULL, 10, &taskhandle_temp_wifi);
+
+
+    DB_PR("-----gpio init2----- ... \r\n");
+
+
+    // gpio_pad_select_gpio(emac->int_gpio_num);
+    // gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
+    // gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLDOWN_ONLY);
+    // gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_POSEDGE);
+
+    // gpio_pad_select_gpio(GPIO_INPUT_IO_ZW_2);
+    // /* Set the GPIO as a push/pull output */
+    // gpio_set_direction(GPIO_INPUT_IO_ZW_2, GPIO_MODE_INPUT);
+    // //gpio_pullup_en(GPIO_INPUT_IO_ZW_2);
+    // //gpio_pullup_dis(GPIO_INPUT_IO_ZW_2);
+    // gpio_set_pull_mode(GPIO_INPUT_IO_ZW_2,GPIO_PULLUP_ONLY);//GPIO_PULLUP_ONLY
+
+
+    gpio_config_t io_conf;
+    io_conf.intr_type    = GPIO_PIN_INTR_DISABLE;
+    io_conf.mode         = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = GPIO_INPUT_ZWJC_PIN_SEL;//(1ULL << GPIO_INPUT_IO_ZW_JC);
+    io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;//GPIO_PULLDOWN_DISABLE todo--------
+    io_conf.pull_up_en   = GPIO_PULLUP_DISABLE;
+    gpio_config(&io_conf);
+
+
+    xTaskCreate(key_trigger, "key_trigger", 1024 * 2, NULL, 10,NULL);
+
+
+}
+
+
 
 void app_main(void)
 {
@@ -11017,6 +11125,13 @@ void app_main(void)
     //vTaskDelay(500 / portTICK_PERIOD_MS);
 
     send_cmd_to_lcd_pic(0x0000);
+
+
+    //------------gpio init--------------------
+    gpio_int();
+
+
+
 
     //xTaskCreate(echo_task, "uart_echo_task", 1024, NULL, 10, NULL);
     xTaskCreate(echo_task, "uart_echo_task", 2* 1024, NULL, 1, NULL);//1024 10
@@ -11071,53 +11186,7 @@ void app_main(void)
 
     
     
-    
 
-    gpio_pad_select_gpio(RE_485_GPIO);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(RE_485_GPIO, GPIO_MODE_OUTPUT);
-    
-    
-
-    // //todo 2G DTU
-    // gpio_pad_select_gpio(ECHO_TEST3_TXD);//->GPIO_OUPUT_IO_2G_RST
-    // /* Set the GPIO as a push/pull output */
-    // gpio_set_direction(ECHO_TEST3_TXD, GPIO_MODE_DISABLE);
-
-    // gpio_pad_select_gpio(ECHO_TEST3_RXD);//->yinpin PA ctl
-    // /* Set the GPIO as a push/pull output */
-    // gpio_set_direction(ECHO_TEST3_RXD, GPIO_MODE_DISABLE);
-
-    gpio_pad_select_gpio(GPIO_OUPUT_IO_2G_RST);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(GPIO_OUPUT_IO_2G_RST, GPIO_MODE_OUTPUT);
-    gpio_set_level(GPIO_OUPUT_IO_2G_RST, 1);
-
-
-
-
-
-    RS485_RX_EN();
-    //RS485_TX_EN();
-
-    gpio_pad_select_gpio(LED_BLUE);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(LED_BLUE, GPIO_MODE_OUTPUT);
-    gpio_set_level(LED_BLUE, 1);
-
-
-    gpio_pad_select_gpio(LED_GRREN);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(LED_GRREN, GPIO_MODE_OUTPUT);
-    gpio_set_level(LED_GRREN, 1);
-
-
-    gpio_pad_select_gpio(LED_RED);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(LED_RED, GPIO_MODE_OUTPUT);
-    gpio_set_level(LED_RED, 1);
-
-    xTaskCreate(gpio_task_example1, "gpio_task_example1", 2048, NULL, 10, &taskhandle_temp);
 
 
     if(shengyu_all_max>SHENYU_GEZI_MAX)
@@ -11150,31 +11219,6 @@ void app_main(void)
 
 
 
-
-    // gpio_pad_select_gpio(emac->int_gpio_num);
-    // gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
-    // gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLDOWN_ONLY);
-    // gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_POSEDGE);
-
-    // gpio_pad_select_gpio(GPIO_INPUT_IO_ZW_2);
-    // /* Set the GPIO as a push/pull output */
-    // gpio_set_direction(GPIO_INPUT_IO_ZW_2, GPIO_MODE_INPUT);
-    // //gpio_pullup_en(GPIO_INPUT_IO_ZW_2);
-    // //gpio_pullup_dis(GPIO_INPUT_IO_ZW_2);
-    // gpio_set_pull_mode(GPIO_INPUT_IO_ZW_2,GPIO_PULLUP_ONLY);//GPIO_PULLUP_ONLY
-
-
-    gpio_config_t io_conf;
-    io_conf.intr_type    = GPIO_PIN_INTR_DISABLE;
-    io_conf.mode         = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = GPIO_INPUT_ZWJC_PIN_SEL;//(1ULL << GPIO_INPUT_IO_ZW_JC);
-    io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;//GPIO_PULLDOWN_DISABLE todo--------
-    io_conf.pull_up_en   = GPIO_PULLUP_DISABLE;
-    gpio_config(&io_conf);
-
-    DB_PR("-----gpio init----- ... \r\n");
-
-    xTaskCreate(key_trigger, "key_trigger", 1024 * 2, NULL, 10,NULL);
 
     //log_debug();
     if(1)
@@ -11279,24 +11323,6 @@ void app_main(void)
 
 
 
-    // for(uint16_t i=1;i<=3;i++)
-    // {
-    //     //vTaskDelay(1000 / portTICK_PERIOD_MS);
-    //     DB_PR("i=%d----\n",i);
-
-    //     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    //     gpio_set_level(LED_BLUE, 0);
-    //     gpio_set_level(LED_GRREN, 0);
-    //     gpio_set_level(LED_RED, 0);
-
-
-    //     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    //     gpio_set_level(LED_BLUE, 1);
-    //     gpio_set_level(LED_GRREN, 1);
-    //     gpio_set_level(LED_RED, 1);
-
-    // }
-
 
 
 
@@ -11337,6 +11363,8 @@ void app_main(void)
     vTaskDelay(3000 / portTICK_PERIOD_MS);//on 
 
 
+    vTaskDelete(taskhandle_system);
+    gpio_set_level(LED_GRREN, 0);//changliang
 
     initialise_wifi();
 
