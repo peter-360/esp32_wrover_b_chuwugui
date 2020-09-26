@@ -80,6 +80,8 @@
 
 #include "esp_wifi.h"
 
+
+static esp_err_t ota_service_cb(periph_service_handle_t handle, periph_service_event_t *evt, void *ctx);
 static void smartconfig_example_task(void * parm);
 static void lock_all_open_task();
 static void lock_all_clear_task();
@@ -110,6 +112,7 @@ u8 audio_play_mp3_over;
 void audio_play_my_mp3(void);
 void audio_play_one_mp3(int num);
 void simple_ota_example_task(void *pvParameter);
+void flash_tone_ota_example_task(void *pvParameter);
 static void event_handler(void* arg, esp_event_base_t event_base, 
                                 int32_t event_id, void* event_data);
 
@@ -5608,7 +5611,7 @@ done_mima_nosame:
                                 DB_PR("---firmware shengji request---.\r\n");   
                                 if(1==wifi_connected_flag)
                                 {
-                                    xTaskCreate(&simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);//8192
+                                    xTaskCreate(&flash_tone_ota_example_task, "flash_tone_ota_example_task", 8192, NULL, 5, NULL);//8192
                                 }
                                 else
                                 {
@@ -10232,9 +10235,49 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 }
 
 
+
+
+
+#include <string.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+#include "freertos/task.h"
+
+#include "audio_common.h"
+#include "board.h"
+#include "esp_log.h"
+#include "esp_peripherals.h"
+#include "esp_system.h"
+#include "nvs_flash.h"
+#include "periph_sdcard.h"
+#include "periph_wifi.h"
+#include "tcpip_adapter.h"
+
+#include "audio_mem.h"
+#include "ota_service.h"
+#include "ota_proc_default.h"
+#include "tone_stream.h"
+
+
+periph_service_handle_t ota_service;
 static void initialise_wifi(void)
 {
     tcpip_adapter_init();
+
+    DB_PR( "[1.0] Initialize peripherals management\n");
+    esp_periph_config_t periph_cfg = DEFAULT_ESP_PERIPH_SET_CONFIG();
+    esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
+
+
+    DB_PR( "[2.0] Create OTA service\n");
+    ota_service_config_t ota_service_cfg = OTA_SERVICE_DEFAULT_CONFIG();
+    ota_service_cfg.task_stack = 8 * 1024;
+    ota_service_cfg.evt_cb = ota_service_cb;
+    ota_service_cfg.cb_ctx = NULL;
+    ota_service = ota_service_create(&ota_service_cfg);//periph_service_handle_t
+    // events = xEventGroupCreate();
+
     s_wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
@@ -10304,10 +10347,10 @@ static void initialise_wifi(void)
     /* xEventGroupWaitBits() returns the bits before the call returned, hence we can test which event actually
      * happened. */
     if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
+        DB_PR( "Failed to connect to SSID:%s, password:%s\n",
                  wifi_ssid, wifi_passwd);
     } else {
-        ESP_LOGE(TAG, "UNEXPECTED EVENT");
+        DB_PR( "UNEXPECTED EVENT\n");
     }
 
  
@@ -10467,7 +10510,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt);
 //         }
 //         DB_PR("\r\n");
 //     } else {
-//         ESP_LOGE(TAG, "HTTP POST request failed: %s", esp_err_to_name(err));
+//         DB_PR( "HTTP POST request failed: %s\n", esp_err_to_name(err));
 //     }
 
 //     DB_PR("\r\n");
@@ -10548,7 +10591,7 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt);
 
 static char REQUEST[1500]= {0};
 
-char mid_buf[1000];
+char mid_buf[1500];
 void send_packetto_server()
 {
     uint32_t flash_id;
@@ -10632,7 +10675,7 @@ static void http_get_task()//
         int err = getaddrinfo(WEB_SERVER, "80", &hints, &res);
 
         if(err != 0 || res == NULL) {
-            ESP_LOGE(TAG, "DNS lookup failed err=%d res=%p", err, res);
+            DB_PR( "DNS lookup failed err=%d res=%p\n", err, res);
             vTaskDelay(1000 / portTICK_PERIOD_MS);
             // continue;
             // vTaskDelete(NULL);
@@ -10646,7 +10689,7 @@ static void http_get_task()//
 
         s = socket(res->ai_family, res->ai_socktype, 0);
         if(s < 0) {
-            ESP_LOGE(TAG, "... Failed to allocate socket.");
+            DB_PR( "... Failed to allocate socket.\n");
             freeaddrinfo(res);
             vTaskDelay(1000 / portTICK_PERIOD_MS);
             // continue;
@@ -10655,7 +10698,7 @@ static void http_get_task()//
         DB_PR( "... allocated socket");
 
         if(connect(s, res->ai_addr, res->ai_addrlen) != 0) {
-            ESP_LOGE(TAG, "... socket connect failed errno=%d", errno);
+            DB_PR( "... socket connect failed errno=%d\n", errno);
             close(s);
             freeaddrinfo(res);
             vTaskDelay(4000 / portTICK_PERIOD_MS);
@@ -10673,7 +10716,7 @@ static void http_get_task()//
 
 
         if (write(s, REQUEST, strlen(REQUEST)) < 0) {
-            ESP_LOGE(TAG, "... socket send failed");
+            DB_PR( "... socket send failed\n");
             close(s);
             vTaskDelay(4000 / portTICK_PERIOD_MS);
             // continue;
@@ -10686,7 +10729,7 @@ static void http_get_task()//
         receiving_timeout.tv_usec = 0;
         if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout,
                 sizeof(receiving_timeout)) < 0) {
-            ESP_LOGE(TAG, "... failed to set socket receiving timeout");
+            DB_PR( "... failed to set socket receiving timeout\n");
             close(s);
             vTaskDelay(4000 / portTICK_PERIOD_MS);
             // continue;
@@ -10951,9 +10994,119 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
     return ESP_OK;
 }
 
-void simple_ota_example_task(void *pvParameter)
+
+// static const char *TAG = "HTTPS_OTA_EXAMPLE";
+// static EventGroupHandle_t events = NULL;
+
+#define OTA_FINISH (BIT3)
+
+static ota_service_err_reason_t audio_tone_need_upgrade(void *handle, ota_node_attr_t *node)
 {
-    char ip_buff_dst[500]={0};
+    bool                need_write_desc = false;
+    flash_tone_header_t cur_header      = { 0 };
+    flash_tone_header_t incoming_header = { 0 };
+    esp_app_desc_t      current_desc    = { 0 };
+    esp_app_desc_t      incoming_desc   = { 0 };
+    esp_err_t           err             = ESP_OK;
+
+    /* try to get the tone partition*/
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, node->label);
+    if (partition == NULL) {
+        DB_PR( "data partition [%s] not found\n", node->label);
+        return OTA_SERV_ERR_REASON_PARTITION_NOT_FOUND;
+    }
+
+    if (tone_partition_verify() == ESP_FAIL) {
+        esp_partition_erase_range(partition, 0, partition->size);
+        return OTA_SERV_ERR_REASON_SUCCESS;
+    }
+
+    /* Read tone header from partition */
+    if (esp_partition_read(partition, 0, (char *)&cur_header, sizeof(flash_tone_header_t)) != ESP_OK) {
+        return OTA_SERV_ERR_REASON_PARTITION_RD_FAIL;
+    }
+
+    /* Read tone header from incoming stream */
+    if (ota_data_image_stream_read(handle, (char *)&incoming_header, sizeof(flash_tone_header_t)) != ESP_OK) {
+        return OTA_SERV_ERR_REASON_STREAM_RD_FAIL;
+    }
+    if (incoming_header.header_tag != 0x2053) {
+        DB_PR( "not audio tone bin\n");
+        return OTA_SERV_ERR_REASON_UNKNOWN;
+    }
+    DB_PR( "format %d : %d\n", cur_header.format, incoming_header.format);
+    /* upgrade the tone bin when incoming bin format is 0 */
+    if (incoming_header.format == 0) {
+        goto write_flash;
+    }
+
+    /* read the app desc from incoming stream when bin format is 1*/
+    if (ota_data_image_stream_read(handle, (char *)&incoming_desc, sizeof(esp_app_desc_t)) != ESP_OK) {
+        return OTA_SERV_ERR_REASON_STREAM_RD_FAIL;
+    }
+    DB_PR( "imcoming magic_word %X, project_name %s\n", incoming_desc.magic_word, incoming_desc.project_name);
+    /* check the incoming app desc */
+    if (incoming_desc.magic_word != FLASH_TONE_MAGIC_WORD) {
+        return OTA_SERV_ERR_REASON_ERROR_MAGIC_WORD;
+    }
+    if (strstr(FLASH_TONE_PROJECT_NAME, incoming_desc.project_name) == NULL) {
+        return OTA_SERV_ERR_REASON_ERROR_PROJECT_NAME;
+    }
+
+    /* compare current app desc with the incoming one if the current bin's format is 1*/
+    if (cur_header.format == 1) {
+        if (tone_partition_get_app_desc(&current_desc) != ESP_OK) {
+            return OTA_SERV_ERR_REASON_PARTITION_RD_FAIL;
+        }
+        if (ota_get_version_number(incoming_desc.version) < 0) {
+            return OTA_SERV_ERR_REASON_ERROR_VERSION;
+        }
+        DB_PR( "current version %s, incoming version %s\n", current_desc.version, incoming_desc.version);
+        // if (ota_get_version_number(incoming_desc.version) <= ota_get_version_number(current_desc.version)) {
+        //     DB_PR( "The incoming version is same as or lower than the running version\n");
+        //     return OTA_SERV_ERR_REASON_NO_HIGHER_VERSION;
+        // }
+    }
+
+    /* incoming bin's format is 1, and the current bin's format is 0, upgrade the incoming one */
+    need_write_desc = true;
+
+write_flash:
+    if ((err = esp_partition_erase_range(partition, 0, partition->size)) != ESP_OK) {
+        DB_PR( "Erase [%s] failed and return %d\n", node->label, err);
+        return OTA_SERV_ERR_REASON_PARTITION_WT_FAIL;
+    }
+    ota_data_partition_write(handle, (char *)&incoming_header, sizeof(flash_tone_header_t));
+    if (need_write_desc) {
+        ota_data_partition_write(handle, (char *)&incoming_desc, sizeof(esp_app_desc_t));
+    }
+    return OTA_SERV_ERR_REASON_SUCCESS;
+}
+
+static esp_err_t ota_service_cb(periph_service_handle_t handle, periph_service_event_t *evt, void *ctx)
+{
+    if (evt->type == OTA_SERV_EVENT_TYPE_RESULT) {
+        ota_result_t *result_data = evt->data;
+        if (result_data->result != ESP_OK) {
+            DB_PR( "-------List id: %d, OTA failed\n", result_data->id);
+            send_cmd_to_lcd_pic(0x0054);
+        } else {
+            DB_PR( "-------List id: %d, OTA success\n", result_data->id);
+            xTaskCreate(&simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);//8192
+        }
+    } else if (evt->type == OTA_SERV_EVENT_TYPE_FINISH) {
+        DB_PR( "---tone OTA_FINISH----\n");
+        xEventGroupSetBits(s_wifi_event_group, OTA_FINISH);
+    }
+
+    return ESP_OK;
+}
+
+
+char ip_buff_dst[500]={0};
+void flash_tone_ota_example_task(void *pvParameter)
+{
+    // char ip_buff_dst0[500]={0};
     u16 update_sta=0;
     // xTaskCreate(&http_test_task, "http_test_task", 8192, NULL, 5, NULL);
     // xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, 5, NULL);
@@ -10966,12 +11119,98 @@ void simple_ota_example_task(void *pvParameter)
     // if(audio_play_mp3_stop == 0)//audio_play_mp3_stop debug
     if(update_sta == 1)//audio_play_mp3_stop
     {
+        send_cmd_to_lcd_pic(0x0057);//todo-----tone update------
+
+        DB_PR( "[2.1] Set upgrade list\n");
+        ota_upgrade_ops_t upgrade_list[] = {
+            {
+                {
+                    ESP_PARTITION_TYPE_DATA,
+                    "flash_tone",//CONFIG_DATA_PARTITION_LABEL,
+                    "http://192.168.10.111:7800/flash_tone.bin", //CONFIG_DATA_UPGRADE_URI,
+                    NULL
+                },
+                NULL,
+                NULL,
+                NULL,
+                NULL,
+                false,
+                false
+            }//,
+            // {
+            //     {
+            //         ESP_PARTITION_TYPE_APP,
+            //         NULL,
+            //         "http://192.168.10.111:7800/hello-world.bin", //CONFIG_FIRMWARE_UPGRADE_URI,
+            //         NULL
+            //     },
+            //     NULL,
+            //     NULL,
+            //     NULL,
+            //     NULL,
+            //     true,
+            //     false
+            // }
+        };
+
+        ota_data_get_default_proc(&upgrade_list[0]);
+        upgrade_list[0].need_upgrade = audio_tone_need_upgrade;
+        // ota_app_get_default_proc(&upgrade_list[1]);
+
+        ota_service_set_upgrade_param(ota_service, upgrade_list, sizeof(upgrade_list) / sizeof(ota_upgrade_ops_t));
+
+
+
+        DB_PR( "[2.2] Start OTA service\n");
+        // AUDIO_MEM_SHOW(TAG);
+        DB_PR( "Func:%s, Line:%d, MEM Total:%d Bytes\r\n",__func__ ,  __LINE__, esp_get_free_heap_size());
+        periph_service_start(ota_service);
+
+
+
+
+        EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group, OTA_FINISH, true, false, portMAX_DELAY);
+        if (bits & OTA_FINISH) {
+            DB_PR( "[2.3] Finish OTA service");
+        }
+        DB_PR( "[2.4] Clear OTA service");
+        // periph_service_destroy(ota_service);
+        // vEventGroupDelete(s_wifi_event_group);
+
+    }
+    else
+    {
+        send_cmd_to_lcd_pic(0x0056);//version cant be updated
+        DB_PR( "--------http ota reject-------------\n\n");
+        // vTaskDelete(NULL);
+    }
+    vTaskDelete(NULL);
+    
+
+}
+
+void simple_ota_example_task(void *pvParameter)
+{
+    // char ip_buff_dst[500]={0};
+    // u16 update_sta=0;
+    // // xTaskCreate(&http_test_task, "http_test_task", 8192, NULL, 5, NULL);
+    // // xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, 5, NULL);
+    // http_get_task();
+    // // vTaskDelay(4000 / portTICK_PERIOD_MS);
+    // update_sta = cjson_to_struct_info(ip_buff_dst,mid_buf);
+    // DB_PR("---------update_sta=%d\n", update_sta);
+    // DB_PR("---------ip_buff_dst=%s\n", ip_buff_dst);
+
+    // // if(audio_play_mp3_stop == 0)//audio_play_mp3_stop debug
+    // if(update_sta == 1)//audio_play_mp3_stop
+    if(1)
+    {
         // wifi_led_duration_time =8;
         DB_PR(  "Starting OTA example\r\n");
         send_cmd_to_lcd_pic(0x0057);
 
         esp_http_client_config_t config = {
-            // .url = "http://192.168.10.101:7800/hello-world.bin",//CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL,//"192.168.10.108",//
+            // .url = "http://192.168.10.111:7800/play_mp3.bin",//CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL,//"192.168.10.108",//
             .url = ip_buff_dst,//"http://express.admin.modoubox.com/play_mp3.bin",
             .cert_pem = (char *)server_cert_pem_start,
             .event_handler = _http_event_handler,
