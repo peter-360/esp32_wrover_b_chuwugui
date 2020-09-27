@@ -9805,7 +9805,9 @@ void key_trigger(void *arg) {
 		case KEY_LONG_PRESS:
 			DB_PR("----long--------长按触发回调 ... \r\n");
             DB_PR("------------peiwang gai wifimima-----------\r\n");
-            if(0==wifi_peiwang_over_flag)
+            esp_smartconfig_stop();//add
+            // if(0==wifi_peiwang_over_flag)
+            if(1)
             {
                 // ESP_ERROR_CHECK( esp_wifi_disconnect() );
                 // ESP_ERROR_CHECK(esp_wifi_stop());
@@ -9840,11 +9842,11 @@ void key_trigger(void *arg) {
                 // ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL) );
                 xTaskCreate(smartconfig_example_task, "smartconfig_example_task", 4096, NULL, 3, NULL);
             }
-			else
-            {
-                send_cmd_to_lcd_pic(0x005c);//todo
-                DB_PR("-------peiwang wei jiesu -------- \r\n");
-            }
+			// else
+            // {
+            //     send_cmd_to_lcd_pic(0x005c);//todo
+            //     DB_PR("-------peiwang wei jiesu -------- \r\n");
+            // }
             
             break;
 
@@ -11196,8 +11198,8 @@ void flash_tone_ota_example_task(void *pvParameter)
             DB_PR( "[2.3] Finish OTA service");
         }
         DB_PR( "[2.4] Clear OTA service");
-        // periph_service_destroy(ota_service);
-        // vEventGroupDelete(s_wifi_event_group);
+        periph_service_destroy(ota_service);
+        vEventGroupDelete(s_wifi_event_group);
 
     }
     else
