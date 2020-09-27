@@ -10785,10 +10785,10 @@ void printJson(cJSON * root)//以递归的方式打印json的最内层键值对
     }
 }
 
-u16 cjson_to_struct_info(char *update_ip_ret,char *text)
+u16 cjson_to_struct_info(char *update_ip_ret,char *update_audio_ip_ret,char *text)
 {
 
-    if(update_ip_ret == NULL || text == NULL)
+    if(update_ip_ret == NULL  || update_audio_ip_ret ==NULL || text == NULL)
     {
         DB_PR("\n----1 err----text=\n%s\n",text);
         return 0;
@@ -10874,6 +10874,22 @@ u16 cjson_to_struct_info(char *update_ip_ret,char *text)
 
             memcpy(update_ip_ret,item->valuestring,strlen(item->valuestring));
             DB_PR("update_ip_ret=%s\n", update_ip_ret);
+
+
+            //---------------------
+            DB_PR("\n%s\n", "--4--一步一步的获取audio url 键值对:");
+            DB_PR("%s\n", "获取result下的cjson对象:");
+            item = cJSON_GetObjectItem(root, "result");//
+            DB_PR("%s\n", cJSON_Print(item));
+
+            DB_PR("%s\n", "获取post_data下的cjson对象");
+            item = cJSON_GetObjectItem(item, "audio_url");
+            DB_PR("%s\n", cJSON_Print(item));
+            DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
+            DB_PR("%s\n", item->valuestring);
+
+            memcpy(update_audio_ip_ret,item->valuestring,strlen(item->valuestring));
+            DB_PR("update_audio_ip_ret=%s\n", update_audio_ip_ret);
         }
         else
         {
@@ -11104,6 +11120,7 @@ static esp_err_t ota_service_cb(periph_service_handle_t handle, periph_service_e
 
 
 char ip_buff_dst[500]={0};
+char ip_buff_dst_audio[500]={0};
 void flash_tone_ota_example_task(void *pvParameter)
 {
     // char ip_buff_dst0[500]={0};
@@ -11112,9 +11129,10 @@ void flash_tone_ota_example_task(void *pvParameter)
     // xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, 5, NULL);
     http_get_task();
     // vTaskDelay(4000 / portTICK_PERIOD_MS);
-    update_sta = cjson_to_struct_info(ip_buff_dst,mid_buf);
+    update_sta = cjson_to_struct_info(ip_buff_dst,ip_buff_dst_audio, mid_buf);
     DB_PR("---------update_sta=%d\n", update_sta);
     DB_PR("---------ip_buff_dst=%s\n", ip_buff_dst);
+    DB_PR("---------ip_buff_dst_audio=%s\n", ip_buff_dst_audio);
 
     // if(audio_play_mp3_stop == 0)//audio_play_mp3_stop debug
     if(update_sta == 1)//audio_play_mp3_stop
@@ -11127,7 +11145,8 @@ void flash_tone_ota_example_task(void *pvParameter)
                 {
                     ESP_PARTITION_TYPE_DATA,
                     "flash_tone",//CONFIG_DATA_PARTITION_LABEL,
-                    "http://192.168.10.111:7800/flash_tone.bin", //CONFIG_DATA_UPGRADE_URI,
+                    ip_buff_dst_audio,
+                    // "http://192.168.10.111:7800/audio_tone.bin", //CONFIG_DATA_UPGRADE_URI,
                     NULL
                 },
                 NULL,
@@ -11152,6 +11171,9 @@ void flash_tone_ota_example_task(void *pvParameter)
             //     false
             // }
         };
+
+        memcpy(upgrade_list->node.uri,ip_buff_dst_audio,strlen(ip_buff_dst_audio));
+        DB_PR("upgrade_list->node.uri=%s\n", upgrade_list->node.uri);
 
         ota_data_get_default_proc(&upgrade_list[0]);
         upgrade_list[0].need_upgrade = audio_tone_need_upgrade;
@@ -11208,10 +11230,10 @@ void simple_ota_example_task(void *pvParameter)
         // wifi_led_duration_time =8;
         DB_PR(  "Starting OTA example\r\n");
         send_cmd_to_lcd_pic(0x0057);
-
+        // .url = "http://192.168.10.111:7800/play_mp3.bin",//CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL,//"192.168.10.108",//
+        // .url = "http://express.admin.modoubox.com/play_mp3.bin",//ip_buff_dst,//
         esp_http_client_config_t config = {
-            // .url = "http://192.168.10.111:7800/play_mp3.bin",//CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL,//"192.168.10.108",//
-            .url = ip_buff_dst,//"http://express.admin.modoubox.com/play_mp3.bin",
+            .url = ip_buff_dst,
             .cert_pem = (char *)server_cert_pem_start,
             .event_handler = _http_event_handler,
         };
@@ -11278,7 +11300,7 @@ void simple_ota_example_task(void *pvParameter)
         DB_PR( "--------http ota reject-------------\n\n");
         vTaskDelete(NULL);
     }
-    
+    vTaskDelete(NULL);
     
 }
 
