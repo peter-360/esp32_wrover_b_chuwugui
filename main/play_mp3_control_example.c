@@ -10583,12 +10583,16 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt);
 
 // RUN_FIRM=%s&CHIP_ID=%08X&MAC_ADDR=%02X%02X%02X%02X%02X%02X&MAC_TYPE=%02d&CHIP_TYPE=ESP32&type=%d
 #define http_upload_data     "{\"type\":%d, \
-    \"firm_run_version\":\"%s\", \
+    \"FIRM_RUN_VERSION\":\"%s\", \
     \"CHIP_ID\":\"%08X\", \
     \"MAC_ADDR\":\"%02X%02X%02X%02X%02X%02X\", \
     \"MAC_TYPE\":%d, \
-    \"CHIP_TYPE\":\"esp32\", \
+    \"guimen_number\":%d, \
+    \"finger_number\":%d, \
+    \"SDK_VERSION\":\"%s\", \
     \"PARTITION_MODE\":1, \
+    \"HARDWARE_VERSION\":\"DZ_202009_V2\", \
+    \"CHIP_TYPE\":\"ESP32-16MB\", \
     \"GUIZI_TYPE\":\"chuwugui\"}"
 
 static char REQUEST[1500]= {0};
@@ -10650,7 +10654,10 @@ void send_packetto_server()
         running_app_info.version,
         flash_id,
         mac[0],mac[1],mac[2],mac[3],mac[4],mac[5],
-        ESP_MAC_WIFI_STA);
+        ESP_MAC_WIFI_STA,
+        SHENYU_GEZI_MAX,
+        AS608Para.PS_max,
+        esp_get_idf_version()  );
     len = strlen(buf_data);
     DB_PR("--------len=%d\n",len);
     sprintf(REQUEST,http_upload_head,len);
