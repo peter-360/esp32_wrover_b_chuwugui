@@ -8976,7 +8976,7 @@ void uart_init_all(void)
 #if _DEBUG_
     uart_config0.baud_rate = 115200;
 #else
-    uart_config0.baud_rate = 9600;
+    uart_config0.baud_rate = 9600; 
 #endif
         // Set UART log level
     //Set UART log level
@@ -9250,7 +9250,7 @@ void audio_init(void)
 
             audio_element_setinfo(i2s_stream_writer, &music_info);
             //------------
-            // i2s_stream_set_clk(i2s_stream_writer, music_info.sample_rates, music_info.bits, music_info.channels);//todo
+            i2s_stream_set_clk(i2s_stream_writer, music_info.sample_rates, music_info.bits, music_info.channels);//todo
             continue;
         }
 
@@ -10857,7 +10857,7 @@ u16 cjson_to_struct_info(char *update_ip_ret,char *update_audio_ip_ret,char *tex
         item = cJSON_GetObjectItem(root, "result");//
         DB_PR("%s\n", cJSON_Print(item));
 
-        DB_PR("%s\n", "获取post_data下的cjson对象");
+        DB_PR("%s\n", "获取status下的cjson对象");
         item = cJSON_GetObjectItem(item, "status");
         DB_PR("%s\n", cJSON_Print(item));
         DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
@@ -10875,7 +10875,7 @@ u16 cjson_to_struct_info(char *update_ip_ret,char *update_audio_ip_ret,char *tex
             item = cJSON_GetObjectItem(root, "result");//
             DB_PR("%s\n", cJSON_Print(item));
 
-            DB_PR("%s\n", "获取post_data下的cjson对象");
+            DB_PR("%s\n", "获取url下的cjson对象");
             item = cJSON_GetObjectItem(item, "url");
             DB_PR("%s\n", cJSON_Print(item));
             DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
@@ -10891,7 +10891,7 @@ u16 cjson_to_struct_info(char *update_ip_ret,char *update_audio_ip_ret,char *tex
             item = cJSON_GetObjectItem(root, "result");//
             DB_PR("%s\n", cJSON_Print(item));
 
-            DB_PR("%s\n", "获取post_data下的cjson对象");
+            DB_PR("%s\n", "获取audio_url下的cjson对象");
             item = cJSON_GetObjectItem(item, "audio_url");
             DB_PR("%s\n", cJSON_Print(item));
             DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
