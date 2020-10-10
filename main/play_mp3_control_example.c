@@ -80,6 +80,26 @@
 
 #include "esp_wifi.h"
 
+#include "cJSON.h"
+
+#include <string.h>
+#include <sys/param.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "esp_event.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include "tcpip_adapter.h"
+#include "protocol_examples_common.h"
+
+#include "lwip/err.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include <lwip/netdb.h>
+
 
 static esp_err_t ota_service_cb(periph_service_handle_t handle, periph_service_event_t *evt, void *ctx);
 static void smartconfig_example_task(void * parm);
@@ -91,6 +111,30 @@ void tongbu_changqi(void);
 void tongbu_locked(void);
 void audio_init(void);
 void close_mp3(void);
+
+
+
+
+
+
+
+#define HOST_IP_ADDR "cabinet.dev.modoubox.com"
+// #define HOST_IP_ADDR "47.94.2.173"
+
+// #define PORT CONFIG_EXAMPLE_PORT
+#define PORT 8088
+
+
+static const char *payload = "register:53988b31ffdb2e7db9c9429b84f0f84";
+
+
+
+
+
+
+
+
+
 
 TaskHandle_t taskhandle1= NULL;
 TaskHandle_t taskhandle_system= NULL;
@@ -10028,6 +10072,277 @@ static void gpio_task_example_wifi(void* arg)
 
 
 
+
+
+
+
+
+
+u16 cjson_to_struct_info_tcp_rcv(char *text)
+{
+
+    if(text == NULL)
+    {
+        DB_PR("\n----1 err----text=\n%s\n",text);
+        return 0;
+    }
+
+    // cJSON *root,*psub;
+
+    // cJSON *arrayItem;
+
+    //截取有效json
+    // DB_PR("\n----1----text=\n%s\n",text);
+    char *index=strchr(text,'{');
+    // char *index=strstr(text,"{\"post_data\":{");
+    // bzero(text, sizeof(text));
+    strcpy(text,index);
+
+    DB_PR("\n----2----text=\n%s\n",text);
+
+
+    u16 update_status=0;
+
+    cJSON * root = NULL;
+    cJSON * item = NULL;//cjson对象
+
+    root = cJSON_Parse(text);     
+    if (!root) 
+    {
+        DB_PR("Error before: [%s]\n",cJSON_GetErrorPtr());
+    }
+    else
+    {
+        DB_PR("---y format-----%s\n", "有格式的方式打印Json:");           
+        DB_PR("---n format-----%s\n\n", cJSON_Print(root));
+        DB_PR("--------%s\n", "无格式方式打印json：");
+        DB_PR("%s\n\n", cJSON_PrintUnformatted(root));
+
+        //---------------------
+        DB_PR("\n%s\n", "--1--一步一步的获取  键值对:");
+        DB_PR("%s\n", "获取 下的cjson对象:");
+        item = cJSON_GetObjectItem(root, "type");//
+        DB_PR("%s\n", cJSON_Print(item));
+
+
+        DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
+        DB_PR("%s\n", item->valuestring);
+                        
+
+        if(0==strcmp("stc:heartbeat",item->valuestring))
+        {
+            DB_PR("----------11111111---------\n");   
+        }
+        else if(0==strcmp("stc:opendoor",item->valuestring))
+        {
+            //---------------------
+            DB_PR("----------22222222---------\n");   
+            DB_PR("\n%s\n", "--2--一步一步的获取 door_number 键值对:");
+
+            DB_PR("%s\n", "获取 door_number 下的cjson对象");
+            item = cJSON_GetObjectItem(root, "door_number");
+            DB_PR("%s\n", cJSON_Print(item));
+            DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
+            DB_PR("%d\n", item->valueint);
+            update_status = item->valueint;
+            DB_PR("---open lock-----update_status=%d\n", update_status);
+
+
+
+
+            item = cJSON_GetObjectItem(root, "order_ary");
+            DB_PR("%s\n", cJSON_Print(item));
+            item = cJSON_GetObjectItem(item, "data");
+            DB_PR("%s\n", cJSON_Print(item));
+            int size = cJSON_GetArraySize(item);
+            DB_PR("--------size=%d-----------\n",size);
+            // fprintf(stdout, "key: %s:", "value2");
+
+            u8 buff_t[100]={0};
+            for (int i = 0; i < size; ++i) {
+                cJSON* tmp = cJSON_GetArrayItem(item, i);
+                buff_t[i] = tmp->valueint;
+                // fprintf(stdout, " %f,", tmp->valuedouble);
+                DB_PR("buff_t[%d]=%02x\n",i, buff_t[i]);
+            }
+
+
+            RS485_TX_EN();
+            uart_write_bytes(UART_NUM_0, (const char *) buff_t, size);
+            RS485_RX_EN();
+
+            DB_PR("\n----------ok-----------\n");   
+
+            // for (int i = 0; i < size; ++i) {
+            //     DB_PR("buff_t[%d]=%02x\n",i, buff_t[i]);
+            // }
+
+            // fprintf(stdout, "\n");
+
+
+        }
+        else
+        {
+            DB_PR("----------33333333   other---------\n");   
+        }
+        
+
+
+        
+
+
+        // DB_PR("\n%s\n", "打印json所有最内层键值对:");
+        // printJson(root);
+    }
+
+
+
+    cJSON_Delete(root);
+    return update_status;
+
+}
+
+
+static int resolve_dns(const char *host, struct sockaddr_in *ip) {
+
+    struct hostent *he;
+    struct in_addr **addr_list;
+    he = gethostbyname(host);
+    if (he == NULL) {
+        return ESP_FAIL;
+    }
+    addr_list = (struct in_addr **)he->h_addr_list;
+    if (addr_list[0] == NULL) {
+        return ESP_FAIL;
+    }
+    ip->sin_family = AF_INET;
+    memcpy(&ip->sin_addr, addr_list[0], sizeof(ip->sin_addr));
+    return ESP_OK;
+}
+
+
+
+
+
+
+static void tcp_client_task(void *pvParameters)
+{
+    char rx_buffer[1024];//128
+    char addr_str[128];
+    int addr_family;
+    int ip_protocol;
+
+    while (1) {
+        if(wifi_connected_flag==0)
+        {
+            vTaskDelete(NULL);
+        }
+
+// #ifdef CONFIG_EXAMPLE_IPV4
+        struct sockaddr_in dest_addr;
+        dest_addr.sin_addr.s_addr = inet_addr(HOST_IP_ADDR);
+        dest_addr.sin_family = AF_INET;
+        dest_addr.sin_port = htons(PORT);
+        addr_family = AF_INET;
+        ip_protocol = IPPROTO_IP;
+        inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
+        //if stream_host is not ip address, resolve it AF_INET,servername,&serveraddr.sin_addr
+        if (inet_pton(AF_INET, HOST_IP_ADDR, &dest_addr.sin_addr) != 1) {
+            if (resolve_dns(HOST_IP_ADDR, &dest_addr) < 0) {
+                // return -1;
+                vTaskDelete(NULL);
+            }
+        }
+// #else // IPV6
+//         struct sockaddr_in6 dest_addr = { 0 };
+//         inet6_aton(HOST_IP_ADDR, &dest_addr.sin6_addr);
+//         dest_addr.sin6_family = AF_INET6;
+//         dest_addr.sin6_port = htons(PORT);
+//         // Setting scope_id to the connecting interface for correct routing if IPv6 Local Link supplied
+//         dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(EXAMPLE_INTERFACE);
+//         addr_family = AF_INET6;
+//         ip_protocol = IPPROTO_IPV6;
+//         inet6_ntoa_r(dest_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
+// #endif
+
+        // int sock
+        int sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
+        if (sock < 0) {
+            DB_PR( "Unable to create socket: errno %d", errno);
+            break;
+        }
+        DB_PR( "Socket created, connecting to %s:%d", HOST_IP_ADDR, PORT);//////////
+        DB_PR( "------IP----- %s:%d", ipaddr_ntoa((const ip_addr_t*)&dest_addr.sin_addr.s_addr), PORT);
+
+        int err = connect(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+        if (err != 0) {
+            DB_PR( "Socket unable to connect: errno %d", errno);
+            break;
+        }
+        DB_PR( "Successfully connected");
+
+
+        // xTaskCreate(tcp_client_send_task, "tcp_client_send", 4096, NULL, 5, NULL);
+        err = send(sock, payload, strlen(payload), 0);
+        if (err < 0) {
+            DB_PR( "Error occurred during sending: errno %d", errno);
+        }
+
+        while (1) {
+            if(wifi_connected_flag==0)
+            {
+                vTaskDelete(NULL);
+            }
+            // int err = send(sock, payload, strlen(payload), 0);
+            // if (err < 0) {
+            //     DB_PR( "Error occurred during sending: errno %d", errno);
+            //     break;
+            // }
+
+            DB_PR( "-----------1-------------");
+            int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);//------阻塞-----
+            // Error occurred during receiving
+            if (len < 0) {
+                DB_PR( "recv failed: errno %d", errno);
+                break;
+            }
+            // Data received
+            else {
+                rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
+                DB_PR( "Received %d bytes from %s:", len, addr_str);
+                DB_PR( "\n%s\n\n", rx_buffer);
+
+
+                cjson_to_struct_info_tcp_rcv(rx_buffer);
+            }
+
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+        }
+
+        if (sock != -1) {
+            DB_PR( "--1---Shutting down socket and restarting...");
+            shutdown(sock, 0);
+            close(sock);
+        }
+    }
+    vTaskDelete(NULL);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* Esptouch example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -10126,6 +10441,12 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         // wifi_led_duration_time =20;
         // vTaskDelete(taskhandle_temp_wifi);
         gpio_set_level(LED_BLUE, 0);
+
+
+        xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
+
+
+
         wifi_connected_flag =1;
         DB_PR("-1-wifi_connected_flag =%d-----.\r\n",wifi_connected_flag);
         //todo pic
@@ -10593,6 +10914,8 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt);
     \"PARTITION_MODE\":1, \
     \"HARDWARE_VERSION\":\"DZ_202009_V2\", \
     \"CHIP_TYPE\":\"ESP32-16MB\", \
+    \"2G_4G_MODEL\":\"2G\", \
+    \"LCD_MODEL\":\"4.7inch\", \
     \"GUIZI_TYPE\":\"chuwugui\"}"
 
 static char REQUEST[1500]= {0};
@@ -10778,7 +11101,7 @@ static void http_get_task()//
 }
 
 
-#include "cJSON.h"
+
 void printJson(cJSON * root)//以递归的方式打印json的最内层键值对
 {
     for(int i=0; i<cJSON_GetArraySize(root); i++)   //遍历最外层json键值对
@@ -11322,7 +11645,8 @@ void gpio_int()
     /* Set the GPIO as a push/pull output */
     gpio_set_direction(RE_485_GPIO, GPIO_MODE_OUTPUT);
     
-    
+    RS485_RX_EN();//RS485_TX_EN();
+
 
     // //todo 2G DTU
     // gpio_pad_select_gpio(ECHO_TEST3_TXD);//->GPIO_OUPUT_IO_2G_RST
@@ -11336,13 +11660,13 @@ void gpio_int()
     gpio_pad_select_gpio(GPIO_OUPUT_IO_2G_RST);
     /* Set the GPIO as a push/pull output */
     gpio_set_direction(GPIO_OUPUT_IO_2G_RST, GPIO_MODE_OUTPUT);
+
+    gpio_set_level(GPIO_OUPUT_IO_2G_RST, 0);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
     gpio_set_level(GPIO_OUPUT_IO_2G_RST, 1);
 
 
 
-
-
-    RS485_RX_EN();//RS485_TX_EN();
 
 
 
