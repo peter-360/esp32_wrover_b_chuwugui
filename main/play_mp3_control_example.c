@@ -9018,9 +9018,9 @@ void uart_init_all(void)
 
 
 #if _DEBUG_
-    uart_config0.baud_rate = 115200;
+    uart_config0.baud_rate = BAUD_RATE_DB;
 #else
-    uart_config0.baud_rate = 9600; 
+    uart_config0.baud_rate = BAUD_RATE_RL; 
 #endif
         // Set UART log level
     //Set UART log level
@@ -10129,6 +10129,7 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
         DB_PR("%s\n", item->valuestring);
                         
 
+        u8 buff_t[100]={0};
         if(0==strcmp("stc:heartbeat",item->valuestring))
         {
             DB_PR("----------11111111---------\n");   
@@ -10158,7 +10159,42 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
             DB_PR("--------size=%d-----------\n",size);
             // fprintf(stdout, "key: %s:", "value2");
 
-            u8 buff_t[100]={0};
+            for (int i = 0; i < size; ++i) {
+                cJSON* tmp = cJSON_GetArrayItem(item, i);
+                buff_t[i] = tmp->valueint;
+                // fprintf(stdout, " %f,", tmp->valuedouble);
+                DB_PR("buff_t[%d]=%02x\n",i, buff_t[i]);
+            }
+
+
+            RS485_TX_EN();
+            uart_write_bytes(UART_NUM_0, (const char *) buff_t, size);
+            RS485_RX_EN();
+
+
+            xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+            DB_PR("\n----------ok-----------\n");   
+
+            // for (int i = 0; i < size; ++i) {
+            //     DB_PR("buff_t[%d]=%02x\n",i, buff_t[i]);
+            // }
+
+        }
+        else if(0==strcmp("stc:open_all",item->valuestring))
+        {
+            //---------------------
+            DB_PR("----------333333333---------\n");   
+
+
+
+            item = cJSON_GetObjectItem(root, "order_ary");
+            DB_PR("%s\n", cJSON_Print(item));
+            item = cJSON_GetObjectItem(item, "data");
+            DB_PR("%s\n", cJSON_Print(item));
+            int size = cJSON_GetArraySize(item);
+            DB_PR("--------size=%d-----------\n",size);
+            // fprintf(stdout, "key: %s:", "value2");
+
             for (int i = 0; i < size; ++i) {
                 cJSON* tmp = cJSON_GetArrayItem(item, i);
                 buff_t[i] = tmp->valueint;
@@ -10177,13 +10213,17 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
             //     DB_PR("buff_t[%d]=%02x\n",i, buff_t[i]);
             // }
 
-            // fprintf(stdout, "\n");
 
+        }
 
+        else if(0==strcmp("stc:restart",item->valuestring))
+        {
+            DB_PR("----------44444444---------\n");   
+            esp_restart();
         }
         else
         {
-            DB_PR("----------33333333   other---------\n");   
+            DB_PR("----------aaaaaaaaa   other---------\n");   
         }
         
 
