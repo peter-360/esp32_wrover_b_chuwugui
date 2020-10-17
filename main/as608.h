@@ -108,7 +108,7 @@ extern const char *TAG ;
 #define BAUD_RATE_RL 115200
 //9600
 
-#define _DEBUG_ 1
+#define _DEBUG_ 0
 
 #if _DEBUG_
 #define DB_PR(...) printf(__VA_ARGS__)

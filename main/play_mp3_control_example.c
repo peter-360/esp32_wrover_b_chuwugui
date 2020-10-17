@@ -9039,7 +9039,7 @@ void uart_init_all(void)
 #endif
         // Set UART log level
     //Set UART log level
-    //esp_log_level_set(TAG, ESP_LOG_INFO);
+    // esp_log_level_set(TAG, ESP_LOG_INFO);
     //Set UART pins (using UART0 default pins ie no changes.)
 
     //0 2G
@@ -9281,8 +9281,8 @@ void es7134_pa_power(bool enable)
 void audio_init(void)
 {
 
-    //esp_log_level_set("*", ESP_LOG_WARN);
-    //esp_log_level_set(TAG, ESP_LOG_NONE);//ESP_LOG_INFO
+    // esp_log_level_set("*", ESP_LOG_WARN);
+    // esp_log_level_set(TAG, ESP_LOG_NONE);//ESP_LOG_INFO
 
     // DB_PR("[ 1 ] Start codec chip");
     // audio_board_handle_t board_handle = audio_board_init();
@@ -11865,6 +11865,7 @@ void app_main(void)
     //xTaskCreate(echo_task, "uart_echo_task", 1024, NULL, 10, NULL);
     xTaskCreate(echo_task, "uart_echo_task", 2* 1024, NULL, 1, NULL);//1024 10
 
+    vTaskDelay(200 / portTICK_PERIOD_MS);
     send_cmd_to_lcd_pic(0x0000);
 
 
