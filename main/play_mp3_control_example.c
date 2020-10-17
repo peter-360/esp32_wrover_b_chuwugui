@@ -101,6 +101,12 @@
 #include <lwip/netdb.h>
 
 
+
+
+#include "sw_serial.h"
+
+
+
 static esp_err_t ota_service_cb(periph_service_handle_t handle, periph_service_event_t *evt, void *ctx);
 static void smartconfig_example_task(void * parm);
 static void lock_all_open_task();
@@ -224,7 +230,7 @@ const char *TAG = "uart_events";
     // #define ECHO_TEST3_RXD  (GPIO_NUM_18)
     // #define ECHO_TEST3_RTS  (UART_PIN_NO_CHANGE)
     // #define ECHO_TEST3_CTS  (UART_PIN_NO_CHANGE)
-#define UART_NUM_LOCK UART_NUM_0
+//#define UART_NUM_LOCK UART_NUM_0
 
 
 
@@ -242,7 +248,7 @@ const char *TAG = "uart_events";
 
 
     #define ECHO_TEST3_TXD  (GPIO_NUM_19)//lock  uart3
-    #define ECHO_TEST3_RXD  (GPIO_NUM_4)
+    #define ECHO_TEST3_RXD  (GPIO_NUM_36 )//GPIO_NUM_4  GPIO_NUM_21 todo
     #define ECHO_TEST3_RTS  (UART_PIN_NO_CHANGE)
     #define ECHO_TEST3_CTS  (UART_PIN_NO_CHANGE)
     #define RE_485_GPIO     (GPIO_NUM_18)
@@ -287,10 +293,9 @@ const char *TAG = "uart_events";
 
 
 
-#define GPIO_OUPUT_IO_2G_RST     GPIO_NUM_19//35//5
+// #define GPIO_OUPUT_IO_2G_RST     GPIO_NUM_19//35//5
 #define GPIO_OUPUT_IO_PA_CTL     GPIO_NUM_4
 
-// #define GPIO_INPUT_IO_ZW_2     (4)
 
 #define GPIO_INPUT_IO_ADMIN     39//4
 #define GPIO_INPUT_IO_ZW_JC     21//35//5
@@ -1144,7 +1149,7 @@ void tongbu_gekou_shuliang_all(uint16_t temp)
 
     tx_Buffer[8] = crc16_temp&0xff;
     tx_Buffer[9] = (crc16_temp>>8)&0xff;
-    uart_write_bytes(UART_NUM_1, (const char *) tx_Buffer, TX1_LEN_BL);
+    uart_write_bytes(UART_NUM_LCD, (const char *) tx_Buffer, TX1_LEN_BL);
 
 }
 
@@ -1171,7 +1176,7 @@ void tongbu_gekou_shuliang_d(uint16_t temp)
 
     tx_Buffer[8] = crc16_temp&0xff;
     tx_Buffer[9] = (crc16_temp>>8)&0xff;
-    uart_write_bytes(UART_NUM_1, (const char *) tx_Buffer, TX1_LEN_BL);
+    uart_write_bytes(UART_NUM_LCD, (const char *) tx_Buffer, TX1_LEN_BL);
 
 }
 
@@ -1197,7 +1202,7 @@ void tongbu_gekou_shuliang_z(uint16_t temp )
 
     tx_Buffer[8] = crc16_temp&0xff;
     tx_Buffer[9] = (crc16_temp>>8)&0xff;
-    uart_write_bytes(UART_NUM_1, (const char *) tx_Buffer, TX1_LEN_BL);
+    uart_write_bytes(UART_NUM_LCD, (const char *) tx_Buffer, TX1_LEN_BL);
 
 
 
@@ -1225,7 +1230,7 @@ void tongbu_gekou_shuliang_x(uint16_t temp)
 
     tx_Buffer[8] = crc16_temp&0xff;
     tx_Buffer[9] = (crc16_temp>>8)&0xff;
-    uart_write_bytes(UART_NUM_1, (const char *) tx_Buffer, TX1_LEN_BL);
+    uart_write_bytes(UART_NUM_LCD, (const char *) tx_Buffer, TX1_LEN_BL);
 
 }
 
@@ -1283,7 +1288,7 @@ void send_cmd_to_lcd_bl_len(uint16_t opCode, uint8_t* buff_temp,uint16_t data_le
     tx_Buffer[3+ data_len-2 ] = crc16_temp&0xff;
     tx_Buffer[3+ data_len-2 +1] = (crc16_temp>>8)&0xff;
     DB_PR("---------debug1---------\r\n");
-    uart_write_bytes(UART_NUM_1, (const char *) tx_Buffer, 3+ data_len);
+    uart_write_bytes(UART_NUM_LCD, (const char *) tx_Buffer, 3+ data_len);
     DB_PR("---------debug2---------\r\n");
     uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
 }
@@ -1311,7 +1316,7 @@ void send_cmd_to_lcd_bl(uint16_t opCode, uint16_t temp)//变量
 
     tx_Buffer[8] = crc16_temp&0xff;
     tx_Buffer[9] = (crc16_temp>>8)&0xff;
-    uart_write_bytes(UART_NUM_1, (const char *) tx_Buffer, TX1_LEN_BL);
+    uart_write_bytes(UART_NUM_LCD, (const char *) tx_Buffer, TX1_LEN_BL);
 
     uart0_debug_data(tx_Buffer, TX1_LEN_BL);
 }
@@ -1388,7 +1393,7 @@ void send_cmd_to_lcd_pic(uint16_t temp)//图片
     tx_Buffer[10] = crc16_temp&0xff;
     tx_Buffer[11] = (crc16_temp>>8)&0xff;
     
-    uart_write_bytes(UART_NUM_1, (const char *) tx_Buffer, TX1_LEN);
+    uart_write_bytes(UART_NUM_LCD, (const char *) tx_Buffer, TX1_LEN);
 
     uart0_debug_data(tx_Buffer, TX1_LEN);
 }
@@ -6827,7 +6832,7 @@ done_kai_admin:
 
 // 	// responseBuffer[5] = sum;
 
-//     //uart_write_bytes(UART_NUM_1, (const char *) data_rx, len_rx);
+//     //uart_write_bytes(UART_NUM_LCD, (const char *) data_rx, len_rx);
 // 	//spear_uart_send_datas(responseBuffer, 6);
 // }
 // bool spear_uart_process_data(uint8_t byt)
@@ -7189,7 +7194,7 @@ static void echo_task()
 
             //vTaskDelay(2 / portTICK_PERIOD_MS);
             xTaskCreate(echo_task0, "uart_echo_task0",2* 1024, NULL, 2, NULL);//uart1
-            // uart_write_bytes(UART_NUM_0, (const char *) data_rx0, len_rx0);//debug---------
+            // uart_write_bytes(UART_NUM_DUBUG, (const char *) data_rx0, len_rx0);//debug todo---------
 
         }
 
@@ -9294,7 +9299,7 @@ void audio_init(void)
 
             audio_element_setinfo(i2s_stream_writer, &music_info);
             //------------
-            i2s_stream_set_clk(i2s_stream_writer, music_info.sample_rates, music_info.bits, music_info.channels);//todo
+            // i2s_stream_set_clk(i2s_stream_writer, music_info.sample_rates, music_info.bits, music_info.channels);//todo
             continue;
         }
 
@@ -9635,8 +9640,8 @@ void zhiwen_init(void )
         
 
         // u8 data = 0x35;
-        // uart_write_bytes(UART_NUM_0, (const char *) &data, 1);//------UART_NUM_2------	  
-        // uart_write_bytes(UART_NUM_1, (const char *) &data, 1);//------UART_NUM_2------	  
+        // uart_write_bytes(UART_NUM_ZHIWEN, (const char *) &data, 1);//------UART_NUM_2------	  
+        // uart_write_bytes(UART_NUM_ZHIWEN, (const char *) &data, 1);//------UART_NUM_2------	  
 	}
     delay_ms(100);
     DB_PR("2y-通讯成功!!!\r\n");
@@ -10168,7 +10173,7 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
 
 
             RS485_TX_EN();
-            uart_write_bytes(UART_NUM_0, (const char *) buff_t, size);
+            uart_write_bytes(UART_NUM_LOCK, (const char *) buff_t, size);
             RS485_RX_EN();
 
 
@@ -10204,7 +10209,7 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
 
 
             RS485_TX_EN();
-            uart_write_bytes(UART_NUM_0, (const char *) buff_t, size);
+            uart_write_bytes(UART_NUM_LOCK, (const char *) buff_t, size);
             RS485_RX_EN();
 
             DB_PR("\n----------ok-----------\n");   
@@ -10319,7 +10324,7 @@ static void tcp_client_task(void *pvParameters)
             DB_PR( "Socket unable to connect: errno %d", errno);
             break;
         }
-        DB_PR( "Successfully connected");
+        DB_PR( "\n--------------server Successfully connected---------------\n");
 
 
         // xTaskCreate(tcp_client_send_task, "tcp_client_send", 4096, NULL, 5, NULL);
@@ -10339,7 +10344,7 @@ static void tcp_client_task(void *pvParameters)
             //     break;
             // }
 
-            DB_PR( "-----------1-------------");
+            DB_PR( "\n -----------1------------- \n");
             int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);//------阻塞-----
             // Error occurred during receiving
             if (len < 0) {
@@ -10483,8 +10488,9 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         gpio_set_level(LED_BLUE, 0);
 
 
-        xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
-
+        // xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
+		
+		// todo http register
 
 
         wifi_connected_flag =1;
@@ -11689,22 +11695,16 @@ void gpio_int()
 
 
     // //todo 2G DTU
-    // gpio_pad_select_gpio(ECHO_TEST3_TXD);//->GPIO_OUPUT_IO_2G_RST
-    // /* Set the GPIO as a push/pull output */
-    // gpio_set_direction(ECHO_TEST3_TXD, GPIO_MODE_DISABLE);
 
-    // gpio_pad_select_gpio(ECHO_TEST3_RXD);//->yinpin PA ctl
-    // /* Set the GPIO as a push/pull output */
-    // gpio_set_direction(ECHO_TEST3_RXD, GPIO_MODE_DISABLE);
 
-    gpio_pad_select_gpio(GPIO_OUPUT_IO_2G_RST);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(GPIO_OUPUT_IO_2G_RST, GPIO_MODE_OUTPUT);
 
-    gpio_set_level(GPIO_OUPUT_IO_2G_RST, 0);
-    vTaskDelay(500 / portTICK_PERIOD_MS);
-    gpio_set_level(GPIO_OUPUT_IO_2G_RST, 1);
+        // gpio_pad_select_gpio(GPIO_OUPUT_IO_2G_RST);
+        // /* Set the GPIO as a push/pull output */
+        // gpio_set_direction(GPIO_OUPUT_IO_2G_RST, GPIO_MODE_OUTPUT);
 
+        // gpio_set_level(GPIO_OUPUT_IO_2G_RST, 0);
+        // vTaskDelay(500 / portTICK_PERIOD_MS);
+        // gpio_set_level(GPIO_OUPUT_IO_2G_RST, 1);
 
 
 
@@ -11763,6 +11763,12 @@ void gpio_int()
 
 
 
+
+
+
+
+
+/*******************************main fun**************************************/
 void app_main(void)
 {
     // u16 buff_temp1[SHENYU_GEZI_MAX]={0};
@@ -11771,27 +11777,29 @@ void app_main(void)
     // u8 buff_temp1_c[400]={0};//char
     // u8 buff_temp2_c[400]={0};//150
 
-    // audio_init();
-    xTaskCreate(audio_init, "audio_init0", 2*1024, NULL, 3, NULL);   
 
 
     uart_init_all();
     //vTaskDelay(500 / portTICK_PERIOD_MS);
 
+    //xTaskCreate(echo_task, "uart_echo_task", 1024, NULL, 10, NULL);
+    xTaskCreate(echo_task, "uart_echo_task", 2* 1024, NULL, 1, NULL);//1024 10
+
     send_cmd_to_lcd_pic(0x0000);
+
+
+    // audio_init();
+    xTaskCreate(audio_init, "audio_init0", 2*1024, NULL, 3, NULL); //4?  
+
+
 
 
     //------------gpio init--------------------
     gpio_int();
 
 
-
-
-    //xTaskCreate(echo_task, "uart_echo_task", 1024, NULL, 10, NULL);
-    xTaskCreate(echo_task, "uart_echo_task", 2* 1024, NULL, 1, NULL);//1024 10
-
 	
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    // vTaskDelay(100 / portTICK_PERIOD_MS);
 
 
 

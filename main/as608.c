@@ -25,8 +25,6 @@
 #include "esp_log.h"
 
 
-#define UART_NUM_ZHIWEN UART_NUM_2
-#define UART_NUM_LOCK UART_NUM_0
 
 void debug_uart1_write_bytes(const char* src, size_t size)
 {
@@ -53,7 +51,7 @@ static void DEBUG_MYUSART1_Sendchar(u8 data)
 
 	Uart1SendString("------to zhiwen data=");
 	u8 data1 = data + 0x30;
-	uart_write_bytes(UART_NUM_LOCK, (const char *) &data1, 1);//------UART_NUM_2------	
+	// uart_write_bytes(UART_NUM_LOCK, (const char *) &data1, 1);//------UART_NUM_2------	
 	Uart1SendString("\r\n");
 }
 static void DEBUG_MYUSART1_SendData(char data)

@@ -85,10 +85,13 @@ extern const char *TAG ;
 
 
 
+#define UART_NUM_LCD UART_NUM_1
+#define UART_NUM_2G UART_NUM_0//tmp
+#define UART_NUM_ZHIWEN UART_NUM_2
+#define UART_NUM_LOCK UART_NUM_0
+// #define UART_NUM_LOCK SOFTWARE_UART_NUM_3
 
-
-
-
+#define UART_NUM_DUBUG UART_NUM_0
 
 //ESP_LOGI(TAG,"--------JudgeStr err--------!!!\r\n");
 // int	_EXFUN(printf, (const char *__restrict, ...)
@@ -104,7 +107,7 @@ extern const char *TAG ;
 #define BAUD_RATE_DB 115200
 #define BAUD_RATE_RL 9600
 
-#define _DEBUG_ 0
+#define _DEBUG_ 1
 
 #if _DEBUG_
 #define DB_PR(...) printf(__VA_ARGS__)
