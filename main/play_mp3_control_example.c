@@ -202,7 +202,9 @@ void es7134_pa_power(bool enable);
 
 
 //static 
-const char *TAG = "uart_events";
+// const char *TAG = "uart_events";
+const char *TAG = "MP3_DECODER";
+
 /**
  * This is an example which echos any data it receives on UART1 back to the sender,
  * with hardware flow control turned off. It does not use UART driver event queue.
@@ -231,7 +233,10 @@ const char *TAG = "uart_events";
     // #define ECHO_TEST3_RTS  (UART_PIN_NO_CHANGE)
     // #define ECHO_TEST3_CTS  (UART_PIN_NO_CHANGE)
 //#define UART_NUM_LOCK UART_NUM_0
-
+#define ECHO_TEST0_TXD  (GPIO_NUM_1)//2-deng    23     hard UART2 0
+#define ECHO_TEST0_RXD  (GPIO_NUM_3)//34        22
+#define ECHO_TEST0_RTS  (UART_PIN_NO_CHANGE)
+#define ECHO_TEST0_CTS  (UART_PIN_NO_CHANGE)//uart0
 
 
 #define ECHO_TEST_TXD  GPIO_NUM_33//32(GPIO_NUM_33)//GPIO_NUM_4
@@ -7204,7 +7209,7 @@ static void echo_task()
 
             //vTaskDelay(2 / portTICK_PERIOD_MS);
             // xTaskCreate(echo_task0, "uart_echo_task0",2* 1024, NULL, 2, NULL);//uart1
-            // uart_write_bytes(UART_NUM_DUBUG, (const char *) data_rx0, len_rx0);//debug todo---------
+            uart_write_bytes(UART_NUM_DUBUG, (const char *) data_rx0, len_rx0);//debug todo---------
 
         }
 
@@ -9044,8 +9049,8 @@ void uart_init_all(void)
 
     //0 2G
     uart_param_config(UART_NUM_0, &uart_config0);
-    uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    // uart_set_pin(UART_NUM_0, ECHO_TEST3_TXD, ECHO_TEST3_RXD, ECHO_TEST3_RTS, ECHO_TEST3_CTS);
+    // uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    uart_set_pin(UART_NUM_0, ECHO_TEST3_TXD, ECHO_TEST3_RXD, ECHO_TEST3_RTS, ECHO_TEST3_CTS);
     //Install UART driver, and get the queue.
     uart_driver_install(UART_NUM_0, BUF_SIZE * 2, 0, 0, NULL, 0);
 
@@ -9072,7 +9077,7 @@ void uart_init_all(void)
 
     //3 485 add    softwareserial
 
-    lock_uart_class= sw_new(ECHO_TEST3_TXD, ECHO_TEST3_RXD, false, 512);//22 21
+    lock_uart_class= sw_new(ECHO_TEST0_TXD, ECHO_TEST0_RXD, false, 512);//22 21
     DB_PR("%u\n", lock_uart_class->bitTime);
     if (lock_uart_class != NULL)
     {
@@ -11767,11 +11772,10 @@ void gpio_int()
 
     DB_PR("-----gpio init----- ... \r\n");
 
-    gpio_pad_select_gpio(RE_485_GPIO);
-    /* Set the GPIO as a push/pull output */
-    gpio_set_direction(RE_485_GPIO, GPIO_MODE_OUTPUT);
-    
-    RS485_RX_EN();//RS485_TX_EN();
+    // gpio_pad_select_gpio(RE_485_GPIO);
+    // /* Set the GPIO as a push/pull output */
+    // gpio_set_direction(RE_485_GPIO, GPIO_MODE_OUTPUT);
+    // RS485_RX_EN();//RS485_TX_EN();
 
 
     // //todo 2G DTU
@@ -11859,6 +11863,13 @@ void app_main(void)
 
 
 	esp_log_level_set(TAG, ESP_LOG_NONE);//ESP_LOG_INFO
+
+    gpio_pad_select_gpio(RE_485_GPIO);
+    /* Set the GPIO as a push/pull output */
+    gpio_set_direction(RE_485_GPIO, GPIO_MODE_OUTPUT);
+    //RCV MODE
+    RS485_RX_EN();//RS485_TX_EN();
+    
     uart_init_all();
     //vTaskDelay(500 / portTICK_PERIOD_MS);
 
