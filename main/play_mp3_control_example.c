@@ -9709,7 +9709,7 @@ void zhiwen_init(void )
             delay_ms(800);
             DB_PR("---1---尝试连接模块...\r\n");	
 
-            if(i==2)
+            if(i==1)
             {
                 DB_PR("---1---zhiwen HandShake fail...\r\n");	
                 HandShakeFlag =1;
@@ -9718,7 +9718,7 @@ void zhiwen_init(void )
         }
         else
         {
-            break;
+            break;//ok
         }
         
 
