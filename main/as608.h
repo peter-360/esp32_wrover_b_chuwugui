@@ -68,8 +68,8 @@ const char *EnsureMessage(u8 ensure);//确认码错误信息解析
 
 
 
-
-
+extern void send_cmd_to_lcd_pic(uint16_t temp);
+extern void re_smartconfig_wifi(void);
 
 extern void delay_ms(u16 nms);
 extern uint8_t flag_rx2;
@@ -108,7 +108,7 @@ extern const char *TAG ;
 #define BAUD_RATE_RL 115200
 //9600
 
-#define _DEBUG_ 0
+#define _DEBUG_ 1
 
 #if _DEBUG_
 #define DB_PR(...) printf(__VA_ARGS__)
