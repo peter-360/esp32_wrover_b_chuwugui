@@ -1099,11 +1099,15 @@ void uart0_debug_data_dec(uint16_t* data,uint16_t len)//16
 
 void uartlock_output(uint8_t* data,uint16_t len)
 {
+#if _DEBUG_
+    uart_write_bytes(UART_NUM_LOCK, (const char *) data, len);
+#else
     // DB_PR("---2----debug_data:");
     for(int i=0;i<len;i++)
         sw_write(lock_uart_class, data[i]);
         // DB_PR("%02x ",data[i]);
     // DB_PR("\r\n");
+#endif
 }
 ///command struct
 typedef struct
@@ -9049,8 +9053,13 @@ void uart_init_all(void)
 
     //0 2G
     uart_param_config(UART_NUM_0, &uart_config0);
-    // uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    uart_set_pin(UART_NUM_0, ECHO_TEST3_TXD, ECHO_TEST3_RXD, ECHO_TEST3_RTS, ECHO_TEST3_CTS);
+
+#if _DEBUG_
+        uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+#else
+        uart_set_pin(UART_NUM_0, ECHO_TEST3_TXD, ECHO_TEST3_RXD, ECHO_TEST3_RTS, ECHO_TEST3_CTS);
+#endif
+    
     //Install UART driver, and get the queue.
     uart_driver_install(UART_NUM_0, BUF_SIZE * 2, 0, 0, NULL, 0);
 
@@ -9074,6 +9083,14 @@ void uart_init_all(void)
     // uart_param_config(UART_NUM_3, &uart_config3);
     // uart_set_pin(UART_NUM_3, ECHO_TEST3_TXD, ECHO_TEST3_RXD, ECHO_TEST3_RTS, ECHO_TEST3_CTS);
     // uart_driver_install(UART_NUM_3, BUF_SIZE * 2, 0, 0, NULL, 0);
+
+
+
+
+
+
+
+#ifndef _DEBUG_
 
     //3 485 add    softwareserial
 
@@ -9146,6 +9163,9 @@ void uart_init_all(void)
     }
     
     // sw_del(lock_uart_class);//todo
+
+#endif
+
 }
 
 

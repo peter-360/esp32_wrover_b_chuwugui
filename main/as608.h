@@ -89,7 +89,7 @@ extern const char *TAG ;
 #define UART_NUM_2G UART_NUM_0//tmp
 #define UART_NUM_ZHIWEN UART_NUM_2
 #define UART_NUM_LOCK UART_NUM_0
-// #define UART_NUM_LOCK SOFTWARE_UART_NUM_3
+// #define UART_NUM_LOCK SOFTWARE_UART_NUM_3     uartlock_output
 
 #define UART_NUM_DUBUG UART_NUM_0
 
