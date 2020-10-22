@@ -60,7 +60,7 @@ void short_pressed_cb(uint8_t key_num,uint8_t *short_pressed_counts)
 
       case 10:
         DB_PR("ten press!!!\n");//todo log
-
+        log_debug();
 
         break;
 

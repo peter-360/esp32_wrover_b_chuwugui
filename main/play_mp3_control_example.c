@@ -9643,7 +9643,7 @@ void read_nvs_guizi_all()
 }
 
 
-#if 0
+#if 1
 void log_debug(void)
 {
     
@@ -9653,13 +9653,13 @@ void log_debug(void)
         if(1== database_gz[i].state_fenpei_gz)
         {
 
-            DB_PR("index =%03d,cunwu_mode =%d,dzx_mode =%d,",\
+            DB_PR2("index =%03d,cunwu_mode =%d,dzx_mode =%d,",\
                     i, database_gz[i].cunwu_mode_gz,database_gz[i].dzx_mode_gz);
 
 
-            DB_PR("phone?=%11llu,mima?=%6u,", database_gz[i].phone_number_nvs_gz, database_gz[i].mima_number_nvs_gz);
+            DB_PR2("phone?=%11llu,mima?=%6u,", database_gz[i].phone_number_nvs_gz, database_gz[i].mima_number_nvs_gz);
 
-            DB_PR("fenpei?=%d, state?=%d,lock?=%d,changqi?=%d, ",\
+            DB_PR2("fenpei?=%d, state?=%d,lock?=%d,changqi?=%d, ",\
                     database_gz[i].state_fenpei_gz,\
                     database_gz[i].state_gz,\
                     database_gz[i].lock,\
@@ -9668,39 +9668,19 @@ void log_debug(void)
             // if(database_gz[i].state_fenpei_gz == 1)
             // {
                 j++;
-                DB_PR("xmh dIndx= %03d, ",database_gz[i].dIndx_gz);
-                DB_PR("xm j= %03d, ",j);//xiangmenhao
+                DB_PR2("xmh dIndx= %03d, ",database_gz[i].dIndx_gz);
+                DB_PR2("xm j= %03d, ",j);//xiangmenhao
             // }
 
 
-
-
-            if(1== database_gz[i].dzx_mode_gz)
-            {
-                //char *	_EXFUN(itoa,(int, char *, int));
-
-                buff_temp1[k] = database_gz[i].dIndx_gz;
-                DB_PR("b_temp1[k]= %03d ",buff_temp1[k]);//xiangmenhao
-                
-                itoa(buff_temp1[k],(char*)(buff_temp1_c+4*(k)),10);//+4*(i-1)
-                k++;
-            }
-            if(2== database_gz[i].dzx_mode_gz)
-            {
-                buff_temp2[l] = database_gz[i].dIndx_gz;
-                DB_PR("b_temp2[l]= %03d ",buff_temp2[l]);//xiangmenhao
-                itoa(buff_temp2[l],(char*)(buff_temp2_c+4*(l)),10);//+4*(i-1)
-                l++;
-            }
+            DB_PR2("zw_page_id= %03d, ",database_gz[i].zhiwen_page_id_gz);
 
 
 
-
-
-            DB_PR("\r\n");
+            DB_PR2("\r\n");
         }
 
-        //DB_PR("---i=%d\r\n",i);
+        //DB_PR2("---i=%d\r\n",i);
 
     }
 }
@@ -11776,44 +11756,7 @@ void app_main(void)
 
 
 #if _DEBUG_
-    //log_debug();
-    if(1)
-    {
-        uint16_t j=0,k=0,l=0;
-        for(uint16_t i=1;i<=SHENYU_GEZI_MAX;i++)
-        {
-            if(1== database_gz[i].state_fenpei_gz)
-            {
-
-                DB_PR("index =%03d,cunwu_mode =%d,dzx_mode =%d,",\
-                        i, database_gz[i].cunwu_mode_gz,database_gz[i].dzx_mode_gz);
-
-
-                DB_PR("phone?=%11llu,mima?=%6u,", database_gz[i].phone_number_nvs_gz, database_gz[i].mima_number_nvs_gz);
-
-                DB_PR("fenpei?=%d, state?=%d,lock?=%d,changqi?=%d, ",\
-                        database_gz[i].state_fenpei_gz,\
-                        database_gz[i].state_gz,\
-                        database_gz[i].lock,\
-                        database_gz[i].changqi);
-                
-                // if(database_gz[i].state_fenpei_gz == 1)
-                // {
-                    j++;
-                    DB_PR("xmh dIndx= %03d, ",database_gz[i].dIndx_gz);
-                    DB_PR("xm j= %03d, ",j);//xiangmenhao
-                // }
-
-                DB_PR("zw_page_id= %03d, ",database_gz[i].zhiwen_page_id_gz);
-
-
-                DB_PR("\r\n");
-            }
-
-            //DB_PR("---i=%d\r\n",i);
-
-        }
-    }
+    log_debug();
 #endif
 
 

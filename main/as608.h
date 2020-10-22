@@ -67,7 +67,7 @@ u8 PS_HandShake(u32 *PS_Addr); //与AS608模块握手
 const char *EnsureMessage(u8 ensure);//确认码错误信息解析
 
 
-
+extern void log_debug(void);
 extern void send_cmd_to_lcd_pic(uint16_t temp);
 extern void re_smartconfig_wifi(void);
 
@@ -108,8 +108,9 @@ extern const char *TAG ;
 #define BAUD_RATE_RL 115200
 //9600
 
-#define _DEBUG_ 1
 
+//for main debug, 0 or 1
+#define _DEBUG_ 1
 #if _DEBUG_
 #define DB_PR(...) printf(__VA_ARGS__)
 #else
@@ -117,15 +118,22 @@ extern const char *TAG ;
 #endif
 
 
-
-
-#define _DEBUG2_ 0
+//for key press 10ci debug,    1
+#define _DEBUG2_ 1
 #if _DEBUG2_
 #define DB_PR2(...) printf(__VA_ARGS__)
 #else
 #define DB_PR2(...) 
 #endif
 
+
+//for 2G debug,   1
+#define _DEBUG3_ 1
+#if _DEBUG3_
+#define DB_PR3(...) printf(__VA_ARGS__)
+#else
+#define DB_PR3(...) 
+#endif
 
 
 
