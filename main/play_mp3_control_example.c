@@ -126,6 +126,7 @@ void close_mp3(void);
 
 #define HOST_IP_ADDR "cabinet.dev.modoubox.com"
 // #define HOST_IP_ADDR "47.94.2.173"
+#define HOST_IP_ADDR "192.168.10.111"
 
 // #define PORT CONFIG_EXAMPLE_PORT
 #define PORT 8088
@@ -150,6 +151,9 @@ TaskHandle_t taskhandle_uart2 = NULL;
 esp_timer_handle_t oneshot_timer;
 
 bool sys_running_flag;
+
+bool tcp_connected_flag;
+
 bool wifi_connected_flag;
 u8 wifi_peiwang_over_flag;
 
@@ -9691,7 +9695,7 @@ void log_debug(void)
 
     }
 
-    DB_PR2("----guimen set----:");
+    DB_PR2("----guimen set----:");//todo nvs
     for(int i=0;i<BOARD_GK_MAX;i++)
         DB_PR2("%02d ",guimen_x_gk_max[i]);
     DB_PR2("\r\n");
@@ -9886,26 +9890,28 @@ static void gpio_task_system(void* arg)
             else
             {
                 DB_PR("------------system heart-----------\r\n");
-
-
-                time_t rawtime;
-                struct tm* timeinfo;
-                char timE[80];
-
-                time(&rawtime);
-                DB_PR2("rawtime=%ld\n",rawtime);
-                rawtime = rawtime + 1603435347;//offset 20201023
-                timeinfo=localtime(&rawtime);
-                strftime(timE,80,"Date:\n%Y-%m-%d\nTime:\n%I:%M:%S\n",timeinfo);
-                DB_PR2("%s",timE);
-
-                printf("Local time is: %s\n",asctime(timeinfo));
-
                 // DB_PR("----GPIO_INPUT_IO_ZW_JC=%d----\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
             }
             
             
 		}
+        if(tick_times%500==0)
+        {
+            time_t rawtime;
+            struct tm* timeinfo;
+            char timE[80];
+
+            time(&rawtime);
+            DB_PR("rawtime=%ld\n",rawtime);
+            rawtime = rawtime + 1603435347;//offset 20201023
+            timeinfo=localtime(&rawtime);
+            // strftime(timE,80,"Date:\n%Y-%m-%d\nTime:\n%I:%M:%S\n",timeinfo);
+            // DB_PR2("%s",timE);
+
+            DB_PR("Local time is: %s\n",asctime(timeinfo));
+
+            DB_PR("tcp_connected_flag=%d\n",tcp_connected_flag);
+        }
 
     }
     vTaskDelete(NULL);
@@ -10113,7 +10119,6 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
 
 
         }
-
         else if(0==strcmp("stc:restart",item->valuestring))
         {
             DB_PR("----------44444444---------\n");   
@@ -10169,6 +10174,7 @@ static void tcp_client_task(void *pvParameters)
     char addr_str[128];
     int addr_family;
     int ip_protocol;
+    u8 retry_count=0;
 
     while (1) {
         if(wifi_connected_flag==0)
@@ -10206,18 +10212,34 @@ static void tcp_client_task(void *pvParameters)
         // int sock
         int sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
         if (sock < 0) {
-            DB_PR( "Unable to create socket: errno %d", errno);
+            DB_PR( "Unable to create socket: errno %d\n", errno);
             break;
         }
-        DB_PR( "Socket created, connecting to %s:%d", HOST_IP_ADDR, PORT);//////////
-        DB_PR( "------IP----- %s:%d", ipaddr_ntoa((const ip_addr_t*)&dest_addr.sin_addr.s_addr), PORT);
+        DB_PR( "Socket created, connecting to %s:%d\n", HOST_IP_ADDR, PORT);//////////
+        DB_PR( "------IP----- %s:%d\n", ipaddr_ntoa((const ip_addr_t*)&dest_addr.sin_addr.s_addr), PORT);
 
-        int err = connect(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+        int err = connect(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));//zu se
+        retry_count++;
         if (err != 0) {
-            DB_PR( "Socket unable to connect: errno %d", errno);
-            break;
+            tcp_connected_flag =0;
+            DB_PR( "Socket unable to connect: errno %d\n", errno);
+            DB_PR( "retry_count %d\n", retry_count);
+            continue;//all time req
+            // if(retry_count>1)   //todo if>2次, 断开
+            // {
+            //     DB_PR( "--------------quit tcp conn---------------\n");
+            //     break;
+            // }
+            // else
+            // {
+            //     DB_PR( "--------------continue tcp conn---------------\n");
+            //     continue;
+            // }
         }
-        DB_PR( "\n--------------server Successfully connected---------------\n");
+
+        DB_PR( "\n--------------tcp server Successfully connected---------------\n");
+        tcp_connected_flag =1;
+
 
 
         // xTaskCreate(tcp_client_send_task, "tcp_client_send", 4096, NULL, 5, NULL);
@@ -10229,6 +10251,7 @@ static void tcp_client_task(void *pvParameters)
         while (1) {
             if(wifi_connected_flag==0)
             {
+                DB_PR( "\n -----------0 tcp------------- \n");
                 vTaskDelete(NULL);
             }
             // int err = send(sock, payload, strlen(payload), 0);
@@ -10381,9 +10404,11 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         gpio_set_level(LED_BLUE, 0);
 
 
-        // xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
 		
 		// todo http register
+
+        xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
+
 
 
         wifi_connected_flag =1;
