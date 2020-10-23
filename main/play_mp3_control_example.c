@@ -9982,12 +9982,14 @@ static void gpio_task_example_wifi(void* arg)
 
 u16 cjson_to_struct_info_tcp_rcv(char *text)
 {
-
+    DB_PR("----------cjson_to_struct_info_tcp_rcv----------\n");
     if(text == NULL)
     {
+        DB_PR("----------222222----------\n");
         DB_PR("\n----1 err----text=\n%s\n",text);
         return 0;
     }
+    DB_PR("----------333333----------\n");
 
     // cJSON *root,*psub;
 
@@ -9998,6 +10000,11 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
     char *index=strchr(text,'{');
     // char *index=strstr(text,"{\"post_data\":{");
     // bzero(text, sizeof(text));
+    if(NULL == index)
+    {
+        DB_PR("------NULL----4444----------\n");
+        return 0;
+    }
     strcpy(text,index);
 
     DB_PR("\n----2----text=\n%s\n",text);
@@ -10141,7 +10148,7 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
 
 
     cJSON_Delete(root);
-    return update_status;
+    return update_status;//door number
 
 }
 
