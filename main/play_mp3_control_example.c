@@ -10186,7 +10186,8 @@ static void tcp_client_task(void *pvParameters)
     while (1) {
         if(wifi_connected_flag==0)
         {
-            vTaskDelete(NULL);
+            // vTaskDelete(NULL);
+            continue;
         }
 
 // #ifdef CONFIG_EXAMPLE_IPV4
@@ -10201,7 +10202,8 @@ static void tcp_client_task(void *pvParameters)
         if (inet_pton(AF_INET, HOST_IP_ADDR, &dest_addr.sin_addr) != 1) {
             if (resolve_dns(HOST_IP_ADDR, &dest_addr) < 0) {
                 // return -1;
-                vTaskDelete(NULL);
+                // vTaskDelete(NULL);
+                continue;
             }
         }
 // #else // IPV6
@@ -10220,7 +10222,8 @@ static void tcp_client_task(void *pvParameters)
         int sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
         if (sock < 0) {
             DB_PR( "Unable to create socket: errno %d\n", errno);
-            break;
+            // break;
+            continue;
         }
         DB_PR( "Socket created, connecting to %s:%d\n", HOST_IP_ADDR, PORT);//////////
         DB_PR( "------IP----- %s:%d\n", ipaddr_ntoa((const ip_addr_t*)&dest_addr.sin_addr.s_addr), PORT);
@@ -10259,7 +10262,8 @@ static void tcp_client_task(void *pvParameters)
             if(wifi_connected_flag==0)
             {
                 DB_PR( "\n -----------0 tcp------------- \n");
-                vTaskDelete(NULL);
+                // vTaskDelete(NULL);
+                continue;
             }
             // int err = send(sock, payload, strlen(payload), 0);
             // if (err < 0) {
