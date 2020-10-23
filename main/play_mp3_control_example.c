@@ -9886,7 +9886,22 @@ static void gpio_task_system(void* arg)
             else
             {
                 DB_PR("------------system heart-----------\r\n");
-                DB_PR("----GPIO_INPUT_IO_ZW_JC=%d----\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
+
+
+                time_t rawtime;
+                struct tm* timeinfo;
+                char timE[80];
+
+                time(&rawtime);
+                DB_PR2("rawtime=%ld\n",rawtime);
+                rawtime = rawtime + 1603435347;//offset 20201023
+                timeinfo=localtime(&rawtime);
+                strftime(timE,80,"Date:\n%Y-%m-%d\nTime:\n%I:%M:%S\n",timeinfo);
+                DB_PR2("%s",timE);
+
+                printf("Local time is: %s\n",asctime(timeinfo));
+
+                // DB_PR("----GPIO_INPUT_IO_ZW_JC=%d----\r\n",gpio_get_level(GPIO_INPUT_IO_ZW_JC));
             }
             
             
