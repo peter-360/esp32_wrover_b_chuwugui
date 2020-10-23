@@ -100,6 +100,98 @@ void long_pressed_cb(uint8_t key_num,uint8_t *long_pressed_counts)
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+#define BUTTON_IO_NUM  GPIO_NUM_39
+//39//0
+#define BUTTON_ACTIVE_LEVEL   0
+#include "stdio.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "freertos/timers.h"
+
+#include "unity.h"
+#include "iot_button.h"
+#include "esp_system.h"
+#include "esp_log.h"
+
+#include "string.h"
+
+static const char* TAG_BTN = "BTN_TEST";
+
+void button_tap_cb(void* arg)
+{
+    char* pstr = (char*) arg;
+    DB_PR( "tap cb (%s), heap: %d\n", pstr, esp_get_free_heap_size());
+    if(NULL!=strstr(pstr,"TAP"))
+    {
+      DB_PR("------1-----short press--------------\n");
+      send_cmd_to_lcd_pic(0x0011);
+    }
+}
+
+void button_press_2s_cb(void* arg)
+{
+    DB_PR( "------2------press 2s, heap: %d\n", esp_get_free_heap_size());
+    re_smartconfig_wifi();
+
+}
+
+void button_press_5s_cb(void* arg)
+{
+    DB_PR( "------3------press 20s, heap: %d\n", esp_get_free_heap_size());
+    log_debug();
+}
+
+void button_test()
+{
+    DB_PR("before btn init, heap: %d\n", esp_get_free_heap_size());
+    button_handle_t btn_handle = iot_button_create(BUTTON_IO_NUM, BUTTON_ACTIVE_LEVEL);
+    iot_button_set_evt_cb(btn_handle, BUTTON_CB_PUSH, button_tap_cb, "PUSH");
+    iot_button_set_evt_cb(btn_handle, BUTTON_CB_RELEASE, button_tap_cb, "RELEASE");
+    iot_button_set_evt_cb(btn_handle, BUTTON_CB_TAP, button_tap_cb, "TAP");
+    iot_button_set_serial_cb(btn_handle, 2, 1000/portTICK_RATE_MS, button_tap_cb, "SERIAL");
+
+    iot_button_add_custom_cb(btn_handle, 2, button_press_2s_cb, NULL);
+    iot_button_add_custom_cb(btn_handle, 15, button_press_5s_cb, NULL);//5s->15s
+    DB_PR("after btn init, heap: %d\n", esp_get_free_heap_size());
+
+    // vTaskDelay(1000 / portTICK_PERIOD_MS);
+    // DB_PR("free btn: heap:%d\n", esp_get_free_heap_size());
+    // iot_button_delete(btn_handle);
+    // DB_PR("after free btn: heap:%d\n", esp_get_free_heap_size());
+}
+
+
+
+
+
 /** 
  * 用户的按键初始化函数
  * @param[in]   null 
@@ -110,7 +202,12 @@ void long_pressed_cb(uint8_t key_num,uint8_t *long_pressed_counts)
  */
 void user_app_key_init(void)
 {
-    int32_t err_code;
-    err_code = user_key_init(gs_m_key_config,BOARD_BUTTON_COUNT,DECOUNE_TIMER,long_pressed_cb,short_pressed_cb);
-    ESP_LOGI("user_app_key_init","user_key_init is %d\n",err_code);
+    // int32_t err_code;
+    // err_code = user_key_init(gs_m_key_config,BOARD_BUTTON_COUNT,DECOUNE_TIMER,long_pressed_cb,short_pressed_cb);
+    // ESP_LOGI("user_app_key_init","user_key_init is %d\n",err_code);//no use, with wifi conflict
+
+    button_test();
+    DB_PR("-----------button_test--------------\n");
+
+    
 }

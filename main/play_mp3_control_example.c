@@ -391,7 +391,7 @@ int16_t hang_shu_max;
 // int16_t guimen_x_gk_max[25]={12,10,10,16,16,16,16,16,16,16,
 //                            16,16,16,16,16,16,16,16,16};//600
 
-// int16_t guimen_x_gk_max[BOARD_GK_MAX];//600=24*25   need save?
+int16_t guimen_x_gk_max[BOARD_GK_MAX];//600=24*25   need save?
 
 
 
@@ -2744,10 +2744,12 @@ static void echo_task2()//lcd
                                             // xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A011_GMSET_ONGO, 10, (TaskHandle_t* )&taskhandle_mp3);
                                             DB_PR("2-------shengyu_all_max_temp=%03d\r\n",shengyu_all_max_temp);
                                             shengyu_all_max = shengyu_all_max_temp;
-                                            // memcpy(guimen_x_gk_max,guimen_x_gk_max_temp,BOARD_GK_MAX);//????????
+                                            memcpy(guimen_x_gk_max,guimen_x_gk_max_temp,BOARD_GK_MAX);//????????
 
                                             // DB_PR("2-hang_shu_max=%03d\r\n",hang_shu_max);
-                                            // uart0_debug_data_d(guimen_x_gk_max,BOARD_GK_MAX);
+                                            uart0_debug_data_d(guimen_x_gk_max,BOARD_GK_MAX);
+
+
                                             DB_PR("3-hang_shu_max=%03d\r\n",hang_shu_max);
                                             uart0_debug_data_d(guimen_x_gk_max_temp,BOARD_GK_MAX);
 
@@ -9647,11 +9649,16 @@ void read_nvs_guizi_all()
 void log_debug(void)
 {
     
+    DB_PR2("AS608Para.PS_max=%d, ValidN =%d ",AS608Para.PS_max, ValidN);
+    DB_PR2("库容量:%d, 对比等级: %d",AS608Para.PS_max-ValidN,AS608Para.PS_level);
+
+
     uint16_t j=0,k=0,l=0;
     for(uint16_t i=1;i<=SHENYU_GEZI_MAX;i++)
     {
         if(1== database_gz[i].state_fenpei_gz)
         {
+
 
             DB_PR2("index =%03d,cunwu_mode =%d,dzx_mode =%d,",\
                     i, database_gz[i].cunwu_mode_gz,database_gz[i].dzx_mode_gz);
@@ -9683,6 +9690,12 @@ void log_debug(void)
         //DB_PR2("---i=%d\r\n",i);
 
     }
+
+    DB_PR2("----guimen set----:");
+    for(int i=0;i<BOARD_GK_MAX;i++)
+        DB_PR2("%02d ",guimen_x_gk_max[i]);
+    DB_PR2("\r\n");
+
 }
 #endif
 
@@ -10562,9 +10575,12 @@ static void initialise_wifi(void)
 
 	DB_PR("1-initialise_wifi. \n");
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
+
+    DB_PR("2-initialise_wifi. \n");
     /* 设置WiFi连接的参数，主要是ssid和password */
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));//add
-	
+
+    DB_PR("3-initialise_wifi. \n");
     ESP_ERROR_CHECK( esp_wifi_start() );
 	
 	DB_PR("2-initialise_wifi finished. \n");
