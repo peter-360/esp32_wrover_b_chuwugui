@@ -3932,28 +3932,14 @@ guimen_set_fail:
                                     guimen_gk_temp = database_cw.dIndx ;
 
 
-      
-                                    DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
-
 
                                     uint16_t j=0,k=0;
 
-                                    k = guimen_gk_temp/24;
-                                    j = guimen_gk_temp%24;
-
-                                    if(guimen_gk_temp%24 ==0)
-                                    {
-                                        k = guimen_gk_temp/24 -1;
-                                        j = 24;
-                                    }
-
-                                    DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
-
-
-                                    // send_cmd_to_lcd_bl_len(0x10c0,(uint8_t*)buff_t,2*2+5);//key
-
+                                    k = (guimen_gk_temp-1)/24 +1;
+                                    j = (guimen_gk_temp-1)%24 +1;
+                                    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
                                     DB_PR("-da-lock:%d ok--.\r\n",j);
-                                    send_cmd_to_lock(k+1,j);
+                                    send_cmd_to_lock(k,j);
 
                                     memset(buff_temp1_c,0,32);
                                     buff_temp1_c[0] = database_gz[database_cw.dIndx].dIndx_gz/256;
@@ -4048,20 +4034,11 @@ wuci_xmh:
 
                                     uint16_t j=0,k=0;
 
-                                    k = guimen_gk_temp/24;
-                                    j = guimen_gk_temp%24;
-
-                                    if(guimen_gk_temp%24 ==0)
-                                    {
-                                        k = guimen_gk_temp/24 -1;
-                                        j = 24;
-                                    }
-                                    DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
-
-
-
+                                    k = (guimen_gk_temp-1)/24 +1;
+                                    j = (guimen_gk_temp-1)%24 +1;
+                                    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
                                     DB_PR("-da-lock:%d ok--.\r\n",j);
-                                    send_cmd_to_lock(k+1,j);
+                                    send_cmd_to_lock(k,j);
 
                                     memset(buff_temp1_c,0,32);
                                     buff_temp1_c[0] = database_gz[database_cw.dIndx].dIndx_gz/256;
@@ -4287,19 +4264,13 @@ wuci_xmh_q:
 
                                     uint16_t j=0,k=0;
 
-                                    k = guimen_gk_temp/24;
-                                    j = guimen_gk_temp%24;
-
-                                    if(guimen_gk_temp%24 ==0)
-                                    {
-                                        k = guimen_gk_temp/24 -1;
-                                        j = 24;
-                                    }
-                                    DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
-
-
-
+                                    k = (guimen_gk_temp-1)/24 +1;
+                                    j = (guimen_gk_temp-1)%24 +1;
+                                    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
                                     DB_PR("-da-lock:%d ok--.\r\n",j);
+                                    send_cmd_to_lock(k,j);
+
+                                    
                                     // send_cmd_to_lock(k+1,j);
                                     send_cmd_to_lcd_bl(0x1150,database_gz[database_cw.dIndx].dIndx_gz);
 
@@ -4474,20 +4445,13 @@ wuci_xmh_lk:
 
                                     uint16_t j=0,k=0;
 
-                                    k = guimen_gk_temp/24;
-                                    j = guimen_gk_temp%24;
 
-                                    if(guimen_gk_temp%24 ==0)
-                                    {
-                                        k = guimen_gk_temp/24 -1;
-                                        j = 24;
-                                    }
-                                    DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
-
-
-
+                                    k = (guimen_gk_temp-1)/24 +1;
+                                    j = (guimen_gk_temp-1)%24 +1;
+                                    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
                                     DB_PR("-da-lock:%d ok--.\r\n",j);
-                                    // send_cmd_to_lock(k+1,j);
+                                    // send_cmd_to_lock(k,j);
+
                                     send_cmd_to_lcd_bl(0x1180,database_gz[database_cw.dIndx].dIndx_gz);
             
                                     //send_cmd_to_lcd_pic(0x0024);
@@ -4695,20 +4659,12 @@ wuci_xmh_unlk:
 
                                     uint16_t j=0,k=0;
 
-                                    k = guimen_gk_temp/24;
-                                    j = guimen_gk_temp%24;
-
-                                    if(guimen_gk_temp%24 ==0)
-                                    {
-                                        k = guimen_gk_temp/24 -1;
-                                        j = 24;
-                                    }
-                                    DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
-
-
-
+                                    k = (guimen_gk_temp-1)/24 +1;
+                                    j = (guimen_gk_temp-1)%24 +1;
+                                    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
                                     DB_PR("-da-lock:%d ok--.\r\n",j);
-                                    //send_cmd_to_lock(k+1,j);
+                                    // send_cmd_to_lock(k,j);
+
             
                                     //send_cmd_to_lcd_pic(0x001c);
 
@@ -4917,29 +4873,15 @@ wuci_xmh_xinz:
 
                                     j=0,k=0;
 
-                                    k = guimen_gk_temp/24;
-                                    j = guimen_gk_temp%24;
-
-                                    if(guimen_gk_temp%24 ==0)
-                                    {
-                                        k = guimen_gk_temp/24 -1;
-                                        j = 24;
-                                    }
-                                    DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
-
-
-
+                                    k = (guimen_gk_temp-1)/24 +1;
+                                    j = (guimen_gk_temp-1)%24 +1;
+                                    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
                                     DB_PR("-da-lock:%d ok--.\r\n",j);
-                                    send_cmd_to_lock(k+1,j);
-                                    
+                                    send_cmd_to_lock(k,j);
+
 
                                     send_cmd_to_lcd_bl(0x10e0,database_gz[database_cw.dIndx].dIndx_gz);
                                     send_cmd_to_lcd_pic(XIN_CHANGQI_OK_PIC);
-
-
-
-                                    
-
 
 
                                     DB_PR("-----2-----[ * ] Starting audio pipeline");
@@ -5114,20 +5056,12 @@ done_longtime_2:
 
                                     uint16_t j=0,k=0;
 
-                                    k = guimen_gk_temp/24;
-                                    j = guimen_gk_temp%24;
-
-                                    if(guimen_gk_temp%24 ==0)
-                                    {
-                                        k = guimen_gk_temp/24 -1;
-                                        j = 24;
-                                    }
-                                    DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
-
-
-
+                                    k = (guimen_gk_temp-1)/24 +1;
+                                    j = (guimen_gk_temp-1)%24 +1;
+                                    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
                                     DB_PR("-da-lock:%d ok--.\r\n",j);
-                                    send_cmd_to_lock(k+1,j);
+                                    send_cmd_to_lock(k,j);
+
                                     send_cmd_to_lcd_bl(0x1120,database_gz[database_cw.dIndx].dIndx_gz);
 
                                     DB_PR("-----2-----[ * ] Starting audio pipeline");
@@ -6055,16 +5989,13 @@ done_mima_nosame:
                                             guimen_gk_temp = database_cw.dIndx ;
                                             uint16_t j=0,k=0;
 
-                                            k = guimen_gk_temp/24;
-                                            j = guimen_gk_temp%24;
+                                            k = (guimen_gk_temp-1)/24 +1;
+                                            j = (guimen_gk_temp-1)%24 +1;
+                                            DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+                                            DB_PR("-da-lock:%d ok--.\r\n",j);
+                                            send_cmd_to_lock(k,j);
 
-                                            if(guimen_gk_temp%24 ==0)
-                                            {
-                                                k = guimen_gk_temp/24 -1;
-                                                j = 24;
-                                            }
 
-                                            DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
 
 
     
@@ -6075,10 +6006,7 @@ done_mima_nosame:
                                                 shengyu_da --;
                                                 tongbu_gekou_shuliang_d(shengyu_da);
 
-
-                                                DB_PR("-da-lock:%d ok--.\r\n",j);
-
-                                                send_cmd_to_lock(k+1,j);
+                                                // send_cmd_to_lock(k,j);
                                                 send_cmd_to_lcd_bl(0x1070,database_gz[database_cw.dIndx].dIndx_gz);//-----------
                                             }
                                         
@@ -6132,16 +6060,13 @@ done_mima_nosame:
                                             guimen_gk_temp = database_cw.dIndx ;
                                             uint16_t j=0,k=0;
 
-                                            k = guimen_gk_temp/24;
-                                            j = guimen_gk_temp%24;
 
-                                            if(guimen_gk_temp%24 ==0)
-                                            {
-                                                k = guimen_gk_temp/24 -1;
-                                                j = 24;
-                                            }
+                                            k = (guimen_gk_temp-1)/24 +1;
+                                            j = (guimen_gk_temp-1)%24 +1;
+                                            DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+                                            DB_PR("-da-lock:%d ok--.\r\n",j);
+                                            send_cmd_to_lock(k,j);
 
-                                            DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
 
 
 
@@ -6150,10 +6075,7 @@ done_mima_nosame:
                                                 shengyu_zhong --;
                                                 tongbu_gekou_shuliang_z(shengyu_zhong);
 
-                                                //DB_PR("--lock2 ok--.\r\n");
-
-                                                DB_PR("-zhong-lock:%d ok--.\r\n",j);
-                                                send_cmd_to_lock(k+1,j);
+                                                // send_cmd_to_lock(k,j);
                                                 send_cmd_to_lcd_bl(0x1070,database_gz[database_cw.dIndx].dIndx_gz);
                                                 
                                             }
@@ -6217,18 +6139,15 @@ done_mima_nosame:
 
 
                                             guimen_gk_temp = database_cw.dIndx ;
-                                                uint16_t j=0,k=0;
 
-                                            k = guimen_gk_temp/24;
-                                            j = guimen_gk_temp%24;
+                                            uint16_t j=0,k=0;
 
-                                            if(guimen_gk_temp%24 ==0)
-                                            {
-                                                k = guimen_gk_temp/24 -1;
-                                                j = 24;
-                                            }
+                                            k = (guimen_gk_temp-1)/24 +1;
+                                            j = (guimen_gk_temp-1)%24 +1;
+                                            DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+                                            DB_PR("-da-lock:%d ok--.\r\n",j);
+                                            send_cmd_to_lock(k,j);
 
-                                            DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
 
 
                                             
@@ -6236,11 +6155,8 @@ done_mima_nosame:
                                             {
                                                 shengyu_xiao --;
                                                 tongbu_gekou_shuliang_x(shengyu_xiao);
-                                                //DB_PR("----------------lock3 ts---------------.\r\n");
-                                                
-                                                DB_PR("-xiao-lock:%d ok--.\r\n",j);
 
-                                                send_cmd_to_lock(k+1,j);
+                                                // send_cmd_to_lock(k,j);
                                                 send_cmd_to_lcd_bl(0x1070,database_gz[database_cw.dIndx].dIndx_gz);
 
                                             }
@@ -6541,21 +6457,14 @@ done_2:
 
                                         uint16_t j=0,k=0;
 
-                                        k = guimen_gk_temp/24;
-                                        j = guimen_gk_temp%24;
+          
+                                        k = (guimen_gk_temp-1)/24 +1;
+                                        j = (guimen_gk_temp-1)%24 +1;
+                                        DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+                                        DB_PR("-da-lock:%d ok--.\r\n",j);
+                                        send_cmd_to_lock(k,j);
 
-                                        if(guimen_gk_temp%24 ==0)
-                                        {
-                                            k = guimen_gk_temp/24 -1;
-                                            j = 24;
-                                        }
-                                        DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
 
-                                    
-                
-
-                                        DB_PR("--lock:%d ok--.\r\n",j);
-                                        send_cmd_to_lock(k+1,j);
                                         send_cmd_to_lcd_bl(0x10a0,database_gz[database_cw.dIndx].dIndx_gz);//weishu bugou
                 
                                         DB_PR("-----2-----[ * ] Starting audio pipeline\r\n");
@@ -7857,18 +7766,11 @@ void Add_FR()
                                 guimen_gk_temp = database_cw.dIndx ;
                                 uint16_t j=0,k=0;
 
-                                k = guimen_gk_temp/24;
-                                j = guimen_gk_temp%24;
-
-                                if(guimen_gk_temp%24 ==0)
-                                {
-                                    k = guimen_gk_temp/24 -1;
-                                    j = 24;
-                                }
-
-                                DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
-
-
+                                k = (guimen_gk_temp-1)/24 +1;
+                                j = (guimen_gk_temp-1)%24 +1;
+                                DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+                                DB_PR("-da-lock:%d ok--.\r\n",j);
+                                send_cmd_to_lock(k,j);
 
 
                                 // if(shengyu_da>0)
@@ -7877,10 +7779,7 @@ void Add_FR()
                                     shengyu_da --;
                                     tongbu_gekou_shuliang_d(shengyu_da);
 
-
-                                    DB_PR("-da-lock:%d ok--.\r\n",j);
-
-                                    send_cmd_to_lock(k+1,j);
+                                    // send_cmd_to_lock(k,j);
                                     send_cmd_to_lcd_bl(0x1070,database_gz[database_cw.dIndx].dIndx_gz);//-----------
                                 }
                             
@@ -7934,17 +7833,11 @@ void Add_FR()
                                 guimen_gk_temp = database_cw.dIndx ;
                                 uint16_t j=0,k=0;
 
-                                k = guimen_gk_temp/24;
-                                j = guimen_gk_temp%24;
-
-                                if(guimen_gk_temp%24 ==0)
-                                {
-                                    k = guimen_gk_temp/24 -1;
-                                    j = 24;
-                                }
-
-                                DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
-
+                                k = (guimen_gk_temp-1)/24 +1;
+                                j = (guimen_gk_temp-1)%24 +1;
+                                DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+                                DB_PR("-da-lock:%d ok--.\r\n",j);
+                                send_cmd_to_lock(k,j);
 
 
                                 //if(shengyu_zhong >0)
@@ -7952,10 +7845,7 @@ void Add_FR()
                                     shengyu_zhong --;
                                     tongbu_gekou_shuliang_z(shengyu_zhong);
 
-                                    //DB_PR("--lock2 ok--.\r\n");
-
-                                    DB_PR("-zhong-lock:%d ok--.\r\n",j);
-                                    send_cmd_to_lock(k+1,j);
+                                    // send_cmd_to_lock(k,j);
                                     send_cmd_to_lcd_bl(0x1070,database_gz[database_cw.dIndx].dIndx_gz);
                                     
                                 }
@@ -8011,16 +7901,11 @@ void Add_FR()
                                 guimen_gk_temp = database_cw.dIndx ;
                                 uint16_t j=0,k=0;
 
-                                k = guimen_gk_temp/24;
-                                j = guimen_gk_temp%24;
-
-                                if(guimen_gk_temp%24 ==0)
-                                {
-                                    k = guimen_gk_temp/24 -1;
-                                    j = 24;
-                                }
-
-                                DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
+                                k = (guimen_gk_temp-1)/24 +1;
+                                j = (guimen_gk_temp-1)%24 +1;
+                                DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+                                DB_PR("-da-lock:%d ok--.\r\n",j);
+                                send_cmd_to_lock(k,j);
 
 
                                 
@@ -8032,7 +7917,7 @@ void Add_FR()
                                     
                                     DB_PR("-xiao-lock:%d ok--.\r\n",j);
 
-                                    send_cmd_to_lock(k+1,j);
+                                    // send_cmd_to_lock(k,j);
                                     send_cmd_to_lcd_bl(0x1070,database_gz[database_cw.dIndx].dIndx_gz);
 
                                 }
@@ -8484,20 +8369,13 @@ void Add_FR_CQ()
 
                         j=0,k=0;
 
-                        k = guimen_gk_temp/24;
-                        j = guimen_gk_temp%24;
-
-                        if(guimen_gk_temp%24 ==0)
-                        {
-                            k = guimen_gk_temp/24 -1;
-                            j = 24;
-                        }
-                        DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
-
-
-
+                        k = (guimen_gk_temp-1)/24 +1;
+                        j = (guimen_gk_temp-1)%24 +1;
+                        DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
                         DB_PR("-da-lock:%d ok--.\r\n",j);
-                        send_cmd_to_lock(k+1,j);
+                        send_cmd_to_lock(k,j);
+
+
                         
 
                         send_cmd_to_lcd_bl(0x10e0,database_gz[database_cw_adm.dIndx].dIndx_gz);
@@ -8877,21 +8755,13 @@ void del_zw_database(u16 num)
 
             uint16_t j=0,k=0;
 
-            k = guimen_gk_temp/24;
-            j = guimen_gk_temp%24;
-
-            if(guimen_gk_temp%24 ==0)
-            {
-                k = guimen_gk_temp/24 -1;
-                j = 24;
-            }
-            DB_PR("------open------ board-addr k+1=%d, lock-addr j=%d--\r\n",k+1,j);
+            k = (guimen_gk_temp-1)/24 +1;
+            j = (guimen_gk_temp-1)%24 +1;
+            DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+            DB_PR("-da-lock:%d ok--.\r\n",j);
+            send_cmd_to_lock(k,j);
 
 
-
-
-            DB_PR("--lock:%d ok--.\r\n",j);
-            send_cmd_to_lock(k+1,j);
             send_cmd_to_lcd_bl(0x10a0,database_gz[database_cw.dIndx].dIndx_gz);//weishu bugou
 
 
@@ -9902,7 +9772,9 @@ static void gpio_task_system(void* arg)
             char timE[80];
 
             time(&rawtime);
-            DB_PR("rawtime=%ld\n",rawtime);
+            int64_t timer_tm = esp_timer_get_time();
+            DB_PR("rawtime=%ld,timer_tm=%lld\n",rawtime,timer_tm);
+            // DB_PR("rawtime=%ld\n",rawtime);
             rawtime = rawtime + 1603435347;//offset 20201023
             timeinfo=localtime(&rawtime);
             // strftime(timE,80,"Date:\n%Y-%m-%d\nTime:\n%I:%M:%S\n",timeinfo);
@@ -10041,12 +9913,12 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
         u8 buff_t[100]={0};
         if(0==strcmp("stc:heartbeat",item->valuestring))
         {
-            DB_PR("----------11111111---------\n");   
+            DB_PR("----------tcp heartbeat---------\n");   
         }
         else if(0==strcmp("stc:opendoor",item->valuestring))
         {
             //---------------------
-            DB_PR("----------22222222---------\n");   
+            DB_PR("----------tcp opendoor---------\n");   
             DB_PR("\n%s\n", "--2--一步一步的获取 door_number 键值对:");
 
             DB_PR("%s\n", "获取 door_number 下的cjson对象");
@@ -10093,7 +9965,7 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
         else if(0==strcmp("stc:open_all",item->valuestring))
         {
             //---------------------
-            DB_PR("----------333333333---------\n");   
+            DB_PR("----------tcp open_all---------\n");   
 
 
 
@@ -10128,8 +10000,13 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
         }
         else if(0==strcmp("stc:restart",item->valuestring))
         {
-            DB_PR("----------44444444---------\n");   
+            DB_PR("----------restart---------\n");   
             esp_restart();
+        }
+        else if(0==strcmp("stc:clear_all",item->valuestring))
+        {
+            DB_PR("----------tcp clear_all---------\n"); 
+            xTaskCreate(lock_all_clear_task, "lk_all_clear_open_task", 4* 1024, NULL, 2, NULL);
         }
         else
         {
@@ -11112,6 +10989,11 @@ u16 cjson_to_struct_info(char *update_ip_ret,char *update_audio_ip_ret,char *tex
     char *index=strchr(text,'{');
     // char *index=strstr(text,"{\"post_data\":{");
     // bzero(text, sizeof(text));
+    if(NULL == index)
+    {
+        DB_PR("------NULL----4444----------\n");
+        return 0;
+    }
     strcpy(text,index);
 
     DB_PR("\n----2----text=\n%s\n",text);
