@@ -2613,8 +2613,8 @@ static void echo_task2()//lcd
                                     {
                                         DB_PR("j=%s\r\n",show[j]);
                                     }
-                                    DB_PR("hang_shu_max=%03d\r\n",hang_shu_max);//0
-
+                                    DB_PR("--1--hang_shu_max=%03d\r\n",hang_shu_max);//0
+                                    hang_shu_max++;
                                     DB_PR("\r\n");
 
 
@@ -2624,13 +2624,13 @@ static void echo_task2()//lcd
                                     uint16_t shengyu_all_max_temp=0;//shengyu max admin, guding
                                     int16_t guimen_x_gk_max_temp[BOARD_GK_MAX]={0};
 
-                                    DB_PR("hang_shu_max+1=%03d\r\n",hang_shu_max+1);//0
+                                    DB_PR("--2--hang_shu_max=%03d----after++\r\n",hang_shu_max);//0
 
   
 
 
 
-                                    if((hang_shu_max+1)> BOARD_GK_MAX)
+                                    if((hang_shu_max)> BOARD_GK_MAX)
                                     {
                                         DB_PR("-----err2 >BOARD_GK_MAX lock------\r\n");
                                         //send_cmd_to_lcd_pic(0x004F);
@@ -2639,10 +2639,10 @@ static void echo_task2()//lcd
                                     }
 
                                     int gm_one_num=0;
-                                    if(hang_shu_max< BOARD_GK_MAX)//300/24 =12.5
+                                    if(hang_shu_max<= BOARD_GK_MAX)//300/24 =12.5
                                     {
                                         DB_PR("show2=\r\n");
-                                        for(j = 0; j < hang_shu_max+1; j++)//i 个柜子
+                                        for(j = 0; j < hang_shu_max; j++)//i 个柜子
                                         {
                                             gm_one_num = atoi((const char*)show[j]);
                                             DB_PR("-1-gm_one_num = %05d\r\n\r\n",gm_one_num);
@@ -2697,7 +2697,7 @@ static void echo_task2()//lcd
                                             shengyu_all_max_temp = shengyu_all_max_temp +guimen_x_gk_max_temp[j];
                                         }
 
-                                        for(j = hang_shu_max+1; j < BOARD_GK_MAX; j++)//i 个柜子 =
+                                        for(j = hang_shu_max; j < BOARD_GK_MAX; j++)//i 个柜子 =
                                         {
                                             //guimen_x_gk_max_temp[j] =0;
                                             for(int k=1; k<= 24; k++)//列
@@ -2713,23 +2713,6 @@ static void echo_task2()//lcd
 
                                         }
 
-
-
-                                        // if((hang_shu_max+1) == 13)
-                                        // {
-                                        //     if(guimen_x_gk_max_temp[12] > 12)
-                                        //     {
-                                        //         DB_PR("-----err1-2 >12gm 12 lock------\r\n");
-                                        //         //send_cmd_to_lcd_pic(0x004F);
-                                        //         // break;
-                                        //         goto guimen_set_fail;
-                                        //     }
-                                        //     else
-                                        //     {
-                                        //         DB_PR("-----ok <12gm 12 lock------\r\n");
-                                        //     }
-                                            
-                                        // }
 
                                         DB_PR("\r\n");
 
@@ -4051,11 +4034,6 @@ wuci_xmh:
             
                                     //send_cmd_to_lcd_pic(0x0024);
                                     send_cmd_to_lcd_pic(CLEAR_ONE_OK_PIC);
-
-
-
-                                    
-                         
 
 
 
@@ -8971,7 +8949,7 @@ void uart_init_all(void)
 
 
 
-
+//for release
 #ifndef _DEBUG_
 
     //3 485 add    softwareserial
@@ -9945,11 +9923,12 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
     DB_PR("\n----2----text=\n%s\n",text);
 
 
-    u16 update_status=0;
 
     cJSON * root = NULL;
     cJSON * item = NULL;//cjson对象
-
+    int16_t guimen_gk_temp =0;
+    u8 buff_temp1_c[32]={0};
+    
     root = cJSON_Parse(text);     
     if (!root) 
     {
@@ -9989,10 +9968,8 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
             DB_PR("%s\n", cJSON_Print(item));
             DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
             DB_PR("%d\n", item->valueint);
-            update_status = item->valueint;
-            DB_PR("---open lock-----update_status=%d\n", update_status);
-
-
+            guimen_gk_temp = item->valueint;
+            DB_PR("---open lock-----guimen_gk_temp=%d\n", guimen_gk_temp);
 
 
             item = cJSON_GetObjectItem(root, "order_ary");
@@ -10011,18 +9988,57 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
             }
 
 
-            RS485_TX_EN();
-            // uart_write_bytes(UART_NUM_LOCK, (const char *) buff_t, size);
-            uartlock_output(buff_t, size);
-            RS485_RX_EN();
+            // RS485_TX_EN();
+            // // uart_write_bytes(UART_NUM_LOCK, (const char *) buff_t, size);
+            // uartlock_output(buff_t, size);
+            // RS485_RX_EN();
+
+            // DB_PR("\n----------ok-----------\n");   
+
+            DB_PR("-------guimen_gk_temp--dIndx=%d--.\r\n",guimen_gk_temp); 
+
+            database_cw.dIndx =0;
+            database_cw.dIndx = find_lock_index(guimen_gk_temp);
+
+            if(database_cw.dIndx == 0)
+            {
+                DB_PR("---wuci_xmh---\n");
+                send_cmd_to_lcd_bl_len(0x10c0,(uint8_t*)buff_t,2*2+5);//key
+                send_cmd_to_lcd_pic(FAIL_XMH_PIC);
+                return_cause = 1;
+                return 0;
+                // goto wuci_xmh;
+            }
+            else
+            {
+    
+                DB_PR("------lock open--dIndx=%d--.\r\n",database_cw.dIndx); 
+                guimen_gk_temp = database_cw.dIndx ;
 
 
-            xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
-            DB_PR("\n----------ok-----------\n");   
 
-            // for (int i = 0; i < size; ++i) {
-            //     DB_PR("buff_t[%d]=%02x\n",i, buff_t[i]);
-            // }
+                uint16_t j=0,k=0;
+
+                k = (guimen_gk_temp-1)/24 +1;
+                j = (guimen_gk_temp-1)%24 +1;
+                DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+                DB_PR("-da-lock:%d ok--.\r\n",j);
+                send_cmd_to_lock(k,j);
+
+                memset(buff_temp1_c,0,32);
+                buff_temp1_c[0] = database_gz[database_cw.dIndx].dIndx_gz/256;
+                buff_temp1_c[1] = database_gz[database_cw.dIndx].dIndx_gz%256;
+                send_cmd_to_lcd_bl_len(0x10c0,buff_temp1_c,32+3);
+                // send_cmd_to_lcd_bl(0x10c0,database_gz[database_cw.dIndx].dIndx_gz);
+
+                send_cmd_to_lcd_pic(0x0014);
+
+
+                DB_PR("-----2 1-----[ * ] Starting audio pipeline\r\n");
+
+                xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, (TaskHandle_t* )&taskhandle_mp3);
+            }
+            
 
         }
         else if(0==strcmp("stc:open_all",item->valuestring))
@@ -10030,8 +10046,6 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
             //---------------------
             DB_PR("----------tcp open_all---------\n");   
 
-
-
             item = cJSON_GetObjectItem(root, "order_ary");
             DB_PR("%s\n", cJSON_Print(item));
             item = cJSON_GetObjectItem(item, "data");
@@ -10048,22 +10062,23 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
             }
 
 
-            RS485_TX_EN();
-            // uart_write_bytes(UART_NUM_LOCK, (const char *) buff_t, size);
-            uartlock_output(buff_t, size);
-            RS485_RX_EN();
+            // RS485_TX_EN();
+            // // uart_write_bytes(UART_NUM_LOCK, (const char *) buff_t, size);
+            // uartlock_output(buff_t, size);
+            // RS485_RX_EN();
 
-            DB_PR("\n----------ok-----------\n");   
+            // DB_PR("\n----------ok-----------\n");   
 
             // for (int i = 0; i < size; ++i) {
             //     DB_PR("buff_t[%d]=%02x\n",i, buff_t[i]);
             // }
 
+            xTaskCreate(lock_all_open_task, "lk_all_open_task", 2* 1024, NULL, 2, NULL);//1024 10
 
         }
         else if(0==strcmp("stc:restart",item->valuestring))
         {
-            DB_PR("----------restart---------\n");   
+            DB_PR("----------tcp restart---------\n");   
             esp_restart();
         }
         else if(0==strcmp("stc:clear_all",item->valuestring))
@@ -10071,9 +10086,170 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
             DB_PR("----------tcp clear_all---------\n"); 
             xTaskCreate(lock_all_clear_task, "lk_all_clear_open_task", 4* 1024, NULL, 2, NULL);
         }
+        else if(0==strcmp("stc:cleardoor",item->valuestring))
+        {
+            DB_PR("----------tcp cleardoor---------\n");   
+            DB_PR("\n%s\n", "--2--一步一步的获取 door_number 键值对:");
+
+            DB_PR("%s\n", "获取 door_number 下的cjson对象");
+            item = cJSON_GetObjectItem(root, "door_number");
+            DB_PR("%s\n", cJSON_Print(item));
+            DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
+            DB_PR("%d\n", item->valueint);
+            guimen_gk_temp = item->valueint;
+            DB_PR("---open lock-----guimen_gk_temp=%d\n", guimen_gk_temp);
+
+            DB_PR("-------guimen_gk_temp--dIndx=%d--.\r\n",guimen_gk_temp); 
+
+
+
+            database_cw.dIndx =0;
+            database_cw.dIndx = find_lock_index(guimen_gk_temp);
+
+            
+
+            if((database_gz[database_cw.dIndx].state_fenpei_gz == 0)
+                ||(database_cw.dIndx ==0))
+            {
+                send_cmd_to_lcd_pic(FAIL_XMH_PIC);
+                send_cmd_to_lcd_bl_len(0x1130,(uint8_t*)buff_t,2*2+5);//
+                return_cause = 2;
+                return 0;
+                // goto wuci_xmh_q;
+            }
+
+            DB_PR("------lock open--dIndx=%d--.\r\n",database_cw.dIndx); 
+            guimen_gk_temp = database_cw.dIndx ;
+
+            uint16_t j=0,k=0;
+
+            k = (guimen_gk_temp-1)/24 +1;
+            j = (guimen_gk_temp-1)%24 +1;
+            DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+            DB_PR("-da-lock:%d ok--.\r\n",j);
+            send_cmd_to_lock(k,j);
+
+            memset(buff_temp1_c,0,32);
+            buff_temp1_c[0] = database_gz[database_cw.dIndx].dIndx_gz/256;
+            buff_temp1_c[1] = database_gz[database_cw.dIndx].dIndx_gz%256;
+            send_cmd_to_lcd_bl_len(0x1130,buff_temp1_c,32+3);
+            // send_cmd_to_lcd_bl(0x1130,database_gz[database_cw.dIndx].dIndx_gz);
+
+            //send_cmd_to_lcd_pic(0x0024);
+            send_cmd_to_lcd_pic(CLEAR_ONE_OK_PIC);
+
+
+            if((0 != database_gz[database_cw.dIndx].state_gz)
+                ||(0 != database_gz[database_cw.dIndx].changqi))
+            {
+                switch (database_gz[database_cw.dIndx].dzx_mode_gz)
+                {
+                case 1:
+                    //d
+                    shengyu_da ++;
+                    tongbu_gekou_shuliang_d(shengyu_da); 
+                    break;
+                case 2:
+                    //z
+                    shengyu_zhong ++;
+                    tongbu_gekou_shuliang_z(shengyu_zhong); 
+                    break;
+                case 3:
+                    //x
+                    shengyu_xiao ++;
+                    tongbu_gekou_shuliang_x(shengyu_xiao); 
+                    break;
+
+                default:
+                    break;
+                }
+
+                DB_PR("----test--.\r\n");  
+                
+
+                shengyu_all ++ ;
+                tongbu_gekou_shuliang_all(shengyu_all);
+
+
+                nvs_wr_shengyu_da(1);
+                nvs_wr_shengyu_zhong(1);
+                nvs_wr_shengyu_xiao(1);
+            }
+
+            
+            DB_PR( "database_gz[database_cw.dIndx].state_gz = %d\r\n", database_gz[database_cw.dIndx].state_gz);
+            
+            
+
+
+
+            //if(0 != database_gz[database_cw.dIndx].state_gz)
+            {
+
+                DB_PR( "---database_gz[database_cw.dIndx].cunwu_mode_gz = %d\r\n", database_gz[database_cw.dIndx].cunwu_mode_gz);
+                //if(database_gz[database_cw.dIndx].cunwu_mode_gz ==1)
+                {
+                    Del_FR(database_gz[database_cw.dIndx].zhiwen_page_id_gz);
+                    //del_zw_database(database_gz[database_cw.dIndx].zhiwen_page_id_gz);
+
+                    database_ad.zhiwen_page_id_adm[database_cw.zhiwen_page_id] =0;
+
+                    database_cw.zhiwen_page_id =database_gz[database_cw.dIndx].zhiwen_page_id_gz;
+                    nvs_wr_adm_zwpageid_flag(1,database_cw.zhiwen_page_id);
+                    database_gz[database_cw.dIndx].zhiwen_page_id_gz = 0;
+                    nvs_wr_zw_pageid_gz(1);
+                    
+                }
+                //else  if(database_gz[database_cw.dIndx].cunwu_mode_gz ==2)
+                {
+                    database_gz[database_cw.dIndx].phone_number_nvs_gz = 0;
+                    database_gz[database_cw.dIndx].mima_number_nvs_gz = 0;
+                    nvs_wr_phone_number_nvs_gz(1);
+                    nvs_wr_mima_number_nvs_gz(1);
+                }
+
+                database_gz[database_cw.dIndx].cunwu_mode_gz = 0;
+                //database_gz[database_cw.dIndx].dzx_mode_gz = 0;
+                database_gz[database_cw.dIndx].state_gz =0;
+                database_gz[database_cw.dIndx].changqi =0;
+                
+                //nvs_wr_dzx_mode_gz(1);
+
+
+                nvs_wr_cunwu_mode_gz(1);
+                nvs_wr_state_gz(1);
+                nvs_wr_glongtime_gz(1);
+
+
+
+                DB_PR("-----2-----[ * ] Starting audio pipeline");
+
+
+                if(audio_play_mp3_task!=0)
+                {
+                    audio_play_mp3_task =0;
+                    vTaskDelay(20 / portTICK_PERIOD_MS);
+                    DB_PR("----111111 -a-----.\r\n");
+                    vTaskDelete(taskhandle_mp3);
+                    // taskhandle_mp3 =NULL;
+                    DB_PR("----111111 -b-----.\r\n");
+                    // vTaskDelay(500 / portTICK_PERIOD_MS);
+                }
+                else
+                {
+                    DB_PR("----222222 =NULL-----.\r\n");
+                }
+                xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                //update xianshi todo
+                tongbu_changqi();
+                //tongbu_locked();    
+            }
+
+        }
+
         else
         {
-            DB_PR("----------aaaaaaaaa   other---------\n");   
+            DB_PR("----------tcp aaaaaaaa other---------\n");   
         }
         
 
@@ -10088,7 +10264,7 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
 
 
     cJSON_Delete(root);
-    return update_status;//door number
+    return 1;//ok
 
 }
 

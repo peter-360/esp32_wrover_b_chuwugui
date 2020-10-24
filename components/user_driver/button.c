@@ -22,7 +22,7 @@
 #include "esp_timer.h"
 
 
-// #define CONFIG_BUTTON_USE_ESP_TIMER 0
+#define CONFIG_BUTTON_USE_ESP_TIMER 1
 #define USE_ESP_TIMER   CONFIG_BUTTON_USE_ESP_TIMER
 #if USE_ESP_TIMER
 #define STOP_TIMER(tmr)   esp_timer_stop(tmr)
