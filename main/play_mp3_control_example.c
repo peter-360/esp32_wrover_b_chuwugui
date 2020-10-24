@@ -2748,6 +2748,9 @@ static void echo_task2()//lcd
                                             // xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A011_GMSET_ONGO, 10, (TaskHandle_t* )&taskhandle_mp3);
                                             DB_PR("2-------shengyu_all_max_temp=%03d\r\n",shengyu_all_max_temp);
                                             shengyu_all_max = shengyu_all_max_temp;
+
+
+                                            bzero(guimen_x_gk_max,BOARD_GK_MAX);
                                             memcpy(guimen_x_gk_max,guimen_x_gk_max_temp,BOARD_GK_MAX);//????????
 
                                             // DB_PR("2-hang_shu_max=%03d\r\n",hang_shu_max);
@@ -7152,6 +7155,9 @@ void ShowErrMessage(u8 ensure)
 {
 		DB_PR("err=%s\r\n",(u8*)EnsureMessage(ensure));
 }
+
+
+
 // //录指纹
 // void Add_FR(void)
 // {
@@ -9519,20 +9525,81 @@ void read_nvs_guizi_all()
 }
 
 
-#if 1
+
 void log_debug(void)
 {
     
-    DB_PR2("AS608Para.PS_max=%d, ValidN =%d ",AS608Para.PS_max, ValidN);
-    DB_PR2("库容量:%d, 对比等级: %d",AS608Para.PS_max-ValidN,AS608Para.PS_level);
+    DB_PR("AS608Para.PS_max=%d, ValidN =%d \n",AS608Para.PS_max, ValidN);
+    DB_PR("库容量:%d, 对比等级: %d \n",AS608Para.PS_max-ValidN,AS608Para.PS_level);
 
+    bzero(guimen_x_gk_max,BOARD_GK_MAX);
 
     uint16_t j=0,k=0,l=0;
     for(uint16_t i=1;i<=SHENYU_GEZI_MAX;i++)
     {
+
         if(1== database_gz[i].state_fenpei_gz)
         {
+            k++;//for use
 
+            DB_PR("index =%03d,cunwu_mode =%d,dzx_mode =%d,",\
+                    i, database_gz[i].cunwu_mode_gz,database_gz[i].dzx_mode_gz);
+
+
+            DB_PR("phone?=%11llu,mima?=%6u,", database_gz[i].phone_number_nvs_gz, database_gz[i].mima_number_nvs_gz);
+
+            DB_PR("fenpei?=%d, state?=%d,lock?=%d,changqi?=%d, ",\
+                    database_gz[i].state_fenpei_gz,\
+                    database_gz[i].state_gz,\
+                    database_gz[i].lock,\
+                    database_gz[i].changqi);
+            
+
+            j++;
+            DB_PR("xmh dIndx= %03d, ",database_gz[i].dIndx_gz);
+            DB_PR("xm j= %03d, ",j);//xiangmenhao
+
+            DB_PR("zw_page_id= %03d, ",database_gz[i].zhiwen_page_id_gz);
+
+            DB_PR("\r\n");
+
+        }
+
+        if(i%24 == 0)
+        {
+            DB_PR("---------\r\n");
+            guimen_x_gk_max[i/24 -1] = k;
+            k=0;
+        }
+
+        //DB_PR("---i=%d\r\n",i);
+
+    }
+
+    DB_PR("----guimen set----:");//todo nvs
+    for(int i=0;i<BOARD_GK_MAX;i++)
+        DB_PR("%02d ",guimen_x_gk_max[i]);
+    DB_PR("\r\n");
+
+}
+
+
+
+
+
+void log_release(void)
+{
+    
+    DB_PR2("2-AS608Para.PS_max=%d, ValidN =%d\n",AS608Para.PS_max, ValidN);
+    DB_PR2("库容量:%d, 对比等级: %d\n",AS608Para.PS_max-ValidN,AS608Para.PS_level);
+
+    uint16_t j=0,k=0,l=0;
+    for(uint16_t i=1;i<=SHENYU_GEZI_MAX;i++)
+    {
+
+        if(1== database_gz[i].state_fenpei_gz)
+        {
+            k++;
 
             DB_PR2("index =%03d,cunwu_mode =%d,dzx_mode =%d,",\
                     i, database_gz[i].cunwu_mode_gz,database_gz[i].dzx_mode_gz);
@@ -9546,32 +9613,28 @@ void log_debug(void)
                     database_gz[i].lock,\
                     database_gz[i].changqi);
             
-            // if(database_gz[i].state_fenpei_gz == 1)
-            // {
-                j++;
-                DB_PR2("xmh dIndx= %03d, ",database_gz[i].dIndx_gz);
-                DB_PR2("xm j= %03d, ",j);//xiangmenhao
-            // }
+
+            j++;
+            DB_PR2("xmh dIndx= %03d, ",database_gz[i].dIndx_gz);
+            DB_PR2("xm j= %03d, ",j);//xiangmenhao
+
 
 
             DB_PR2("zw_page_id= %03d, ",database_gz[i].zhiwen_page_id_gz);
 
-
-
             DB_PR2("\r\n");
+
         }
 
-        //DB_PR2("---i=%d\r\n",i);
 
     }
 
-    DB_PR2("----guimen set----:");//todo nvs
+    DB_PR2("--2--guimen set----:");//todo nvs
     for(int i=0;i<BOARD_GK_MAX;i++)
         DB_PR2("%02d ",guimen_x_gk_max[i]);
     DB_PR2("\r\n");
 
 }
-#endif
 
 
 static void oneshot_timer_callback(void* arg)
@@ -9634,8 +9697,8 @@ void zhiwen_init(void )
 			// mymemset(str,0,50);
 			// sprintf(str,"库容量:%d     对比等级: %d",AS608Para.PS_max-ValidN,AS608Para.PS_level);
 			// Show_Str(0,80,240,16,(u8*)str,16,0);
-        DB_PR("3-AS608Para.PS_max=%d, ValidN =%d ",AS608Para.PS_max, ValidN);
-        DB_PR("3-库容量:%d     对比等级: %d",AS608Para.PS_max-ValidN,AS608Para.PS_level);
+        DB_PR("3-AS608Para.PS_max=%d, ValidN =%d \n",AS608Para.PS_max, ValidN);
+        DB_PR("3-库容量:%d     对比等级: %d\n",AS608Para.PS_max-ValidN,AS608Para.PS_level);
         if(0==AS608Para.PS_max)
         {
             DB_PR("------------fail   AS608Para.PS_max ==0-----------\r\n");
@@ -11704,9 +11767,9 @@ void app_main(void)
 
 
 
-#if _DEBUG_
-    log_debug();
-#endif
+
+    log_debug();//must be reserved
+
 
 
 

@@ -60,7 +60,7 @@ void short_pressed_cb(uint8_t key_num,uint8_t *short_pressed_counts)
 
       case 10:
         DB_PR("ten press!!!\n");//todo log
-        log_debug();
+        log_release();
 
         break;
 
@@ -166,7 +166,7 @@ void button_press_2s_cb(void* arg)
 void button_press_5s_cb(void* arg)
 {
     DB_PR( "------3------press 20s, heap: %d\n", esp_get_free_heap_size());
-    log_debug();
+    log_release();
 }
 
 void button_test()

@@ -67,7 +67,7 @@ u8 PS_HandShake(u32 *PS_Addr); //与AS608模块握手
 const char *EnsureMessage(u8 ensure);//确认码错误信息解析
 
 
-extern void log_debug(void);
+extern void log_release(void);
 extern void send_cmd_to_lcd_pic(uint16_t temp);
 extern void re_smartconfig_wifi(void);
 
