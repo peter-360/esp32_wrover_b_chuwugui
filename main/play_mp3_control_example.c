@@ -8937,11 +8937,13 @@ void uart_init_all(void)
 
 
 
-#if _DEBUG_
-    uart_config0.baud_rate = BAUD_RATE_DB;
-#else
-    uart_config0.baud_rate = BAUD_RATE_RL; 
-#endif
+// #if _DEBUG_
+//     uart_config0.baud_rate = BAUD_RATE_DB;
+// #else
+//     uart_config0.baud_rate = BAUD_RATE_RL; 
+// #endif
+
+
         // Set UART log level
     //Set UART log level
     // esp_log_level_set(TAG, ESP_LOG_INFO);
@@ -8986,81 +8988,86 @@ void uart_init_all(void)
 
 
 //for release
-#ifndef _DEBUG_
-
-    //3 485 add    softwareserial
-
-    lock_uart_class= sw_new(ECHO_TEST0_TXD, ECHO_TEST0_RXD, false, 512);//22 21
-    DB_PR("%u\n", lock_uart_class->bitTime);
-    if (lock_uart_class != NULL)
+    if(0==_DEBUG_)
     {
-        
-        sw_open(lock_uart_class, 9600); // 115200 > 9600
-
-        DB_PR("-------1-------sw_write test\n");
-        // for (size_t i = 0; i < 128; i++)
-        // {
-        //     sw_write(lock_uart_class, (uint8_t)i);
-        // }
-        // vTaskDelay(500 / portTICK_RATE_MS);
-
-        // DB_PR("--------2-------sw_write test\n");
-        // for (size_t i = 128; i < 256; i++)
-        // {
-        //     sw_write(lock_uart_class, (uint8_t)i);
-        // }
-        // vTaskDelay(500 / portTICK_RATE_MS);
-
-
-
-
-        // uint8_t mybuf[200]={0};
-        // while (true)
-        // {
+        //3 485 add    softwareserial
+        DB_PR("---_DEBUG_==0--\r\n");
+        lock_uart_class= sw_new(ECHO_TEST0_TXD, ECHO_TEST0_RXD, false, 512);//22 21
+        DB_PR("%u\n", lock_uart_class->bitTime);
+        if (lock_uart_class != NULL)
+        {
             
-        //     vTaskDelay(100 / portTICK_RATE_MS);//1000
-        //     // DB_PR("check recvd data");
-        //     int len = sw_any(lock_uart_class);
+            sw_open(lock_uart_class, 9600); // 115200 > 9600
+
+            DB_PR("-------1-------sw_write test\n");
+            // for (size_t i = 0; i < 128; i++)
+            // {
+            //     sw_write(lock_uart_class, (uint8_t)i);
+            // }
+            // vTaskDelay(500 / portTICK_RATE_MS);
+
+            // DB_PR("--------2-------sw_write test\n");
+            // for (size_t i = 128; i < 256; i++)
+            // {
+            //     sw_write(lock_uart_class, (uint8_t)i);
+            // }
+            // vTaskDelay(500 / portTICK_RATE_MS);
+
+
+
+
+            // uint8_t mybuf[200]={0};
+            // while (true)
+            // {
+                
+            //     vTaskDelay(100 / portTICK_RATE_MS);//1000
+            //     // DB_PR("check recvd data");
+            //     int len = sw_any(lock_uart_class);
+                
+            //     if (len > 0)
+            //     {
+            //         printf("\n-----------1s len=%d-----------\n",len);
+            //         for (size_t i = 0; i < len; i++)
+            //         {
+            //             mybuf[i] = sw_read(lock_uart_class);
+            //             printf("%02X ", mybuf[i]);
+            //             // sw_write(lock_uart_class, mybuf[i]);
+            //             // // printf("%02X ", sw_read(lock_uart_class));
+            //             // sw_write(lock_uart_class, (uint8_t)(sw_read(lock_uart_class)));
+            //         }
+            //         printf("\n-----------1e-----------\n");
+            //         // vTaskDelay(100 / portTICK_RATE_MS);
+
+            //         printf("\n-----------2s-----------\n");
+            //         // for (size_t i = 0; i < len; i++)
+            //         // {
+            //         //     // printf("%02X ", sw_read(lock_uart_class));
+            //         //     sw_write(lock_uart_class, mybuf[i]);
+            //         //     // sw_write(lock_uart_class, (uint8_t)i);
+            //         // }
+                                        
+            //         for (size_t i = 0; i < 250; i++)
+            //         {
+            //             sw_write(lock_uart_class, (uint8_t)i);
+            //         }
+            //         printf("\n-----------2e-----------\n");
+
+            //         printf("\nrecv sw_any %02u %02u %02u \n", sw_any(lock_uart_class), lock_uart_class->inPos, lock_uart_class->outPos);
+
+            //     }
+
+            // }
             
-        //     if (len > 0)
-        //     {
-        //         printf("\n-----------1s len=%d-----------\n",len);
-        //         for (size_t i = 0; i < len; i++)
-        //         {
-        //             mybuf[i] = sw_read(lock_uart_class);
-        //             printf("%02X ", mybuf[i]);
-        //             // sw_write(lock_uart_class, mybuf[i]);
-        //             // // printf("%02X ", sw_read(lock_uart_class));
-        //             // sw_write(lock_uart_class, (uint8_t)(sw_read(lock_uart_class)));
-        //         }
-        //         printf("\n-----------1e-----------\n");
-        //         // vTaskDelay(100 / portTICK_RATE_MS);
-
-        //         printf("\n-----------2s-----------\n");
-        //         // for (size_t i = 0; i < len; i++)
-        //         // {
-        //         //     // printf("%02X ", sw_read(lock_uart_class));
-        //         //     sw_write(lock_uart_class, mybuf[i]);
-        //         //     // sw_write(lock_uart_class, (uint8_t)i);
-        //         // }
-                                    
-        //         for (size_t i = 0; i < 250; i++)
-        //         {
-        //             sw_write(lock_uart_class, (uint8_t)i);
-        //         }
-        //         printf("\n-----------2e-----------\n");
-
-        //         printf("\nrecv sw_any %02u %02u %02u \n", sw_any(lock_uart_class), lock_uart_class->inPos, lock_uart_class->outPos);
-
-        //     }
-
-        // }
+        }
         
+        // sw_del(lock_uart_class);//todo
+
+    }
+    else
+    {
+        DB_PR("---_DEBUG_==1--\r\n");
     }
     
-    // sw_del(lock_uart_class);//todo
-
-#endif
 
 }
 

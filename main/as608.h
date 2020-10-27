@@ -80,7 +80,7 @@ extern int len_rx2_m;
 // extern uint8_t data_rx2[];
 // extern int len_rx2;
 
-extern const char *TAG ;
+// extern const char *TAG ;
 
 
 
