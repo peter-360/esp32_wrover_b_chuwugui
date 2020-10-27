@@ -8949,17 +8949,7 @@ void uart_init_all(void)
     // esp_log_level_set(TAG, ESP_LOG_INFO);
     //Set UART pins (using UART0 default pins ie no changes.)
 
-    //0 2G
-    uart_param_config(UART_NUM_0, &uart_config0);
 
-#if _DEBUG_
-        uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-#else
-        uart_set_pin(UART_NUM_0, ECHO_TEST3_TXD, ECHO_TEST3_RXD, ECHO_TEST3_RTS, ECHO_TEST3_CTS);
-#endif
-    
-    //Install UART driver, and get the queue.
-    uart_driver_install(UART_NUM_0, BUF_SIZE * 2, 0, 0, NULL, 0);
 
     // vTaskDelay(1000 / portTICK_PERIOD_MS);
     // DB_PR("Start ttl application test and configure UART2.\r\n");
@@ -8986,12 +8976,25 @@ void uart_init_all(void)
 
 
 
+    // vTaskDelay(1000 / portTICK_PERIOD_MS);//
+    //0 2G
+    uart_param_config(UART_NUM_0, &uart_config0);
 
-//for release
+#if _DEBUG_
+        uart_set_pin(UART_NUM_0, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+#else
+        uart_set_pin(UART_NUM_0, ECHO_TEST3_TXD, ECHO_TEST3_RXD, ECHO_TEST3_RTS, ECHO_TEST3_CTS);
+#endif
+    
+    //Install UART driver, and get the queue.
+    uart_driver_install(UART_NUM_0, BUF_SIZE * 2, 0, 0, NULL, 0);
+
+
+    //3 485 add    softwareserial
+    //for release
     if(0==_DEBUG_)
     {
-        //3 485 add    softwareserial
-        DB_PR("---_DEBUG_==0--\r\n");
+        DB_PR("---_DEBUG_==0--,for release\r\n");
         lock_uart_class= sw_new(ECHO_TEST0_TXD, ECHO_TEST0_RXD, false, 512);//22 21
         DB_PR("%u\n", lock_uart_class->bitTime);
         if (lock_uart_class != NULL)
@@ -9026,22 +9029,22 @@ void uart_init_all(void)
                 
             //     if (len > 0)
             //     {
-            //         printf("\n-----------1s len=%d-----------\n",len);
+            //         DB_PR("\n-----------1s len=%d-----------\n",len);
             //         for (size_t i = 0; i < len; i++)
             //         {
             //             mybuf[i] = sw_read(lock_uart_class);
-            //             printf("%02X ", mybuf[i]);
+            //             DB_PR("%02X ", mybuf[i]);
             //             // sw_write(lock_uart_class, mybuf[i]);
-            //             // // printf("%02X ", sw_read(lock_uart_class));
+            //             // // DB_PR("%02X ", sw_read(lock_uart_class));
             //             // sw_write(lock_uart_class, (uint8_t)(sw_read(lock_uart_class)));
             //         }
-            //         printf("\n-----------1e-----------\n");
+            //         DB_PR("\n-----------1e-----------\n");
             //         // vTaskDelay(100 / portTICK_RATE_MS);
 
-            //         printf("\n-----------2s-----------\n");
+            //         DB_PR("\n-----------2s-----------\n");
             //         // for (size_t i = 0; i < len; i++)
             //         // {
-            //         //     // printf("%02X ", sw_read(lock_uart_class));
+            //         //     // DB_PR("%02X ", sw_read(lock_uart_class));
             //         //     sw_write(lock_uart_class, mybuf[i]);
             //         //     // sw_write(lock_uart_class, (uint8_t)i);
             //         // }
@@ -9050,9 +9053,9 @@ void uart_init_all(void)
             //         {
             //             sw_write(lock_uart_class, (uint8_t)i);
             //         }
-            //         printf("\n-----------2e-----------\n");
+            //         DB_PR("\n-----------2e-----------\n");
 
-            //         printf("\nrecv sw_any %02u %02u %02u \n", sw_any(lock_uart_class), lock_uart_class->inPos, lock_uart_class->outPos);
+            //         DB_PR("\nrecv sw_any %02u %02u %02u \n", sw_any(lock_uart_class), lock_uart_class->inPos, lock_uart_class->outPos);
 
             //     }
 
@@ -9931,12 +9934,35 @@ static void gpio_task_example_wifi(void* arg)
 
 
 
+static char * makeJson(void)
+{
+    cJSON *pJsonRoot = NULL;
+    cJSON *pSubJson = NULL;
+    char *p = NULL;
+
+    pJsonRoot = cJSON_CreateObject();
+    cJSON_AddStringToObject(pJsonRoot, "type_rsp", "stc:cx_shengyu_kongxiang_quantity_all");  //String类型
+
+    pSubJson = cJSON_CreateObject();  //创建一个cJSON，用于嵌套数据
+    cJSON_AddStringToObject(pSubJson, "type", "Value");  //在子cJSON下，增加一个String类型数据
+    cJSON_AddNumberToObject(pSubJson, "data", shengyu_all);  
+    cJSON_AddItemToObject(pJsonRoot, "order_ary", pSubJson);  //将子cJSON加入到pJsonRoot
+
+    p = cJSON_Print(pJsonRoot);
+    if(NULL == p)
+    {
+        DB_PR("%s line=%d NULL\n", __func__, __LINE__);
+        cJSON_Delete(pJsonRoot);
+        return NULL;
+    }
+
+    cJSON_Delete(pJsonRoot);
+
+    return p;
+}
 
 
-
-
-
-u16 cjson_to_struct_info_tcp_rcv(char *text)
+u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
 {
     DB_PR("----------cjson_to_struct_info_tcp_rcv----------\n");
     if(text == NULL)
@@ -10982,15 +11008,32 @@ u16 cjson_to_struct_info_tcp_rcv(char *text)
         {
             DB_PR("----------tcp unlockin_door---------\n");   
         }
-        else if(0==strcmp("stc:addlongtime_door",item->valuestring))
-        {
-            DB_PR("----------tcp addlongtime_door---------\n");   
-        }
         else if(0==strcmp("stc:unlongtime_door",item->valuestring))
         {
             DB_PR("----------tcp unlongtime_door---------\n");   
         }
+        else if(0==strcmp("stc:cx_shengyu_kongxiang_quantity_all",item->valuestring))
+        {
+            DB_PR("----------tcp stc:cx_shengyu_kongxiang_quantity_all---------\n");   
+            char *rsp_str;
+            
+            /* 最初的内存分配 */
+            rsp_str = (char *) malloc(1000);
+            rsp_str = makeJson();
+            if(NULL == rsp_str)
+            {
+                DB_PR("----------err---------\n");   
+                return 0;
+            }
+            DB_PR("rsp_str = \n%s\n\n", rsp_str);  //打印构造的字符串
 
+            int err = send(sock, rsp_str, strlen(rsp_str), 0);
+            if (err < 0) {
+                DB_PR( "Error occurred during sending: errno %d", errno);
+            }
+
+            free(rsp_str);
+        }
         else
         {
             DB_PR("----------tcp aaaaaaaa other---------\n");   
@@ -11145,7 +11188,7 @@ static void tcp_client_task(void *pvParameters)
                 DB_PR( "\n%s\n\n", rx_buffer);
 
 
-                cjson_to_struct_info_tcp_rcv(rx_buffer);
+                cjson_to_struct_info_tcp_rcv(rx_buffer,sock);
             }
 
             vTaskDelay(2000 / portTICK_PERIOD_MS);
