@@ -9934,7 +9934,7 @@ static void gpio_task_example_wifi(void* arg)
 
 
 
-static char * makeJson(void)
+static char * makeJson_cx_shengyu_kongxiang_quantity_all(void)
 {
     cJSON *pJsonRoot = NULL;
     cJSON *pSubJson = NULL;
@@ -9947,6 +9947,70 @@ static char * makeJson(void)
     cJSON_AddStringToObject(pSubJson, "type", "Value");  //在子cJSON下，增加一个String类型数据
     cJSON_AddNumberToObject(pSubJson, "data", shengyu_all);  
     cJSON_AddItemToObject(pJsonRoot, "order_ary", pSubJson);  //将子cJSON加入到pJsonRoot
+
+    p = cJSON_Print(pJsonRoot);
+    if(NULL == p)
+    {
+        DB_PR("%s line=%d NULL\n", __func__, __LINE__);
+        cJSON_Delete(pJsonRoot);
+        return NULL;
+    }
+
+    cJSON_Delete(pJsonRoot);
+
+    return p;
+}
+
+
+
+
+static char * makeJson_cx_lock_in_list(void)
+{
+    u16 buff_temp2[SHENYU_GEZI_MAX]={0};
+    uint16_t l=0;
+    for(uint16_t i=1;i<=SHENYU_GEZI_MAX;i++)
+    {
+        //vTaskDelay(1);
+        if(1== database_gz[i].state_fenpei_gz)
+        {
+
+            if(1== database_gz[i].lock)
+            {
+                buff_temp2[l] = database_gz[i].dIndx_gz;
+                DB_PR("b_temp2[l]= %03d ",buff_temp2[l]);//xiangmenhao
+                l++;
+                DB_PR("\r\n");
+            }
+
+        }
+
+    }
+
+
+    cJSON *pJsonRoot = NULL;
+    cJSON *pSubJson = NULL;
+    cJSON *dataArray = cJSON_CreateArray();
+    char *p = NULL;
+
+    pJsonRoot = cJSON_CreateObject();
+    cJSON_AddStringToObject(pJsonRoot, "type_rsp", "stc:cx_cx_lock_in_list");  //String类型
+
+    pSubJson = cJSON_CreateObject();  //创建一个cJSON，用于嵌套数据
+    cJSON_AddStringToObject(pSubJson, "type", "Buffer");  //在子cJSON下，增加一个String类型数据
+    cJSON_AddNumberToObject(pSubJson, "data_quantity", l);  
+
+    if(l!=0)
+    {
+        for(uint16_t i=0;i<l;i++)
+        {
+            cJSON_AddItemToArray(dataArray, cJSON_CreateNumber(buff_temp2[i]));
+        }
+        cJSON_AddItemToObject(pSubJson, "data", dataArray);
+    }
+
+    cJSON_AddItemToObject(pJsonRoot, "order_ary", pSubJson);  //将子cJSON加入到pJsonRoot
+
+
 
     p = cJSON_Print(pJsonRoot);
     if(NULL == p)
@@ -11018,8 +11082,8 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
             char *rsp_str;
             
             /* 最初的内存分配 */
-            rsp_str = (char *) malloc(1000);
-            rsp_str = makeJson();
+            rsp_str = (char *) malloc(1024);
+            rsp_str = makeJson_cx_shengyu_kongxiang_quantity_all();
             if(NULL == rsp_str)
             {
                 DB_PR("----------err---------\n");   
@@ -11029,7 +11093,29 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
 
             int err = send(sock, rsp_str, strlen(rsp_str), 0);
             if (err < 0) {
-                DB_PR( "Error occurred during sending: errno %d", errno);
+                DB_PR( "Error occurred during sending: errno %d\n", errno);
+            }
+
+            free(rsp_str);
+        }
+        else if(0==strcmp("stc:cx_lock_in_list",item->valuestring))
+        {
+            DB_PR("----------tcp stc:cx_lock_in_list---------\n");   
+            char *rsp_str;
+            
+            /* 最初的内存分配 */
+            rsp_str = (char *) malloc(1024);
+            rsp_str = makeJson_cx_lock_in_list();
+            if(NULL == rsp_str)
+            {
+                DB_PR("----------err---------\n");   
+                return 0;
+            }
+            DB_PR("rsp_str = \n%s\n\n", rsp_str);  //打印构造的字符串
+
+            int err = send(sock, rsp_str, strlen(rsp_str), 0);
+            if (err < 0) {
+                DB_PR( "Error occurred during sending: errno %d\n", errno);
             }
 
             free(rsp_str);
@@ -11126,6 +11212,8 @@ static void tcp_client_task(void *pvParameters)
         if (sock < 0) {
             DB_PR( "Unable to create socket: errno %d\n", errno);
             // break;
+            shutdown(sock, 0);
+            close(sock);
             continue;
         }
         DB_PR( "Socket created, connecting to %s:%d\n", HOST_IP_ADDR, PORT);//////////
@@ -11135,6 +11223,7 @@ static void tcp_client_task(void *pvParameters)
         retry_count++;
         if (err != 0) {
             tcp_connected_flag =0;
+            gpio_set_level(LED_RED, 1);
             DB_PR( "Socket unable to connect: errno %d\n", errno);
             DB_PR( "retry_count %d\n", retry_count);
             continue;//all time req
@@ -11152,13 +11241,13 @@ static void tcp_client_task(void *pvParameters)
 
         DB_PR( "\n--------------tcp server Successfully connected---------------\n");
         tcp_connected_flag =1;
-
+        gpio_set_level(LED_RED, 0);
 
 
         // xTaskCreate(tcp_client_send_task, "tcp_client_send", 4096, NULL, 5, NULL);
         err = send(sock, payload, strlen(payload), 0);
         if (err < 0) {
-            DB_PR( "Error occurred during sending: errno %d", errno);
+            DB_PR( "Error occurred during sending: errno %d\n", errno);
         }
 
         while (1) {
@@ -11195,7 +11284,9 @@ static void tcp_client_task(void *pvParameters)
         }
 
         if (sock != -1) {
-            DB_PR( "--1---Shutting down socket and restarting...");
+            tcp_connected_flag =0;
+            gpio_set_level(LED_RED, 1);
+            DB_PR( "--1---Shutting down socket and restarting...\n\n");
             shutdown(sock, 0);
             close(sock);
         }
@@ -11321,7 +11412,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 		
 		// todo http register
 
-        xTaskCreate(tcp_client_task, "tcp_client", 4096, NULL, 5, NULL);
+        xTaskCreate(tcp_client_task, "tcp_client", 1024*12, NULL, 5, NULL);//4096
 
 
 
@@ -11898,7 +11989,7 @@ static void http_get_task()//
 
            Note: inet_ntoa is non-reentrant, look at ipaddr_ntoa_r for "real" code */
         addr = &((struct sockaddr_in *)res->ai_addr)->sin_addr;
-        DB_PR( "DNS lookup succeeded. IP=%s", inet_ntoa(*addr));
+        DB_PR( "DNS lookup succeeded. IP=%s\n", inet_ntoa(*addr));
 
         s = socket(res->ai_family, res->ai_socktype, 0);
         if(s < 0) {
@@ -11908,7 +11999,7 @@ static void http_get_task()//
             // continue;
             // vTaskDelete(NULL);
         }
-        DB_PR( "... allocated socket");
+        DB_PR( "... allocated socket\n");
 
         if(connect(s, res->ai_addr, res->ai_addrlen) != 0) {
             DB_PR( "... socket connect failed errno=%d\n", errno);
@@ -11935,7 +12026,7 @@ static void http_get_task()//
             // continue;
             // vTaskDelete(NULL);
         }
-        DB_PR( "... socket send success");
+        DB_PR( "... socket send success\n");
 
         struct timeval receiving_timeout;
         receiving_timeout.tv_sec = 5;
@@ -11948,7 +12039,7 @@ static void http_get_task()//
             // continue;
             // vTaskDelete(NULL);
         }
-        DB_PR( "... set socket receiving timeout success");
+        DB_PR( "... set socket receiving timeout success\n");
 
 
         memset(mid_buf,0,sizeof(mid_buf));
@@ -11969,13 +12060,13 @@ static void http_get_task()//
         
         DB_PR("\n\n");
 
-        DB_PR( "... done reading from socket. Last read return=%d errno=%d.", r, errno);
+        DB_PR( "... done reading from socket. Last read return=%d errno=%d.\n", r, errno);
         close(s);
         // for(int countdown = 10; countdown >= 0; countdown--) {
         //     DB_PR( "%d... ", countdown);//idx-----------
         //     vTaskDelay(1000 / portTICK_PERIOD_MS);
         // }
-        DB_PR( "Starting again!");
+        DB_PR( "Starting again!\n");
     }
 
     // vTaskDelete(NULL);
