@@ -456,9 +456,10 @@ typedef struct
         //格口编号 箱门-nolock
         uint16_t dIndx_gz;//add
         uint8_t state_fenpei_gz; //fenpei 是否
-        //daxiao
+        //da zhong xiao
         uint8_t dzx_mode_gz;//default
-
+        //zhiwen mima
+        uint8_t cunwu_mode_gz;
 
         bool lock;
 
@@ -466,8 +467,7 @@ typedef struct
 
         uint8_t state_gz; //zaiyong 是否
 
-    //zhiwen mima
-    uint8_t cunwu_mode_gz;
+
 
     //yonghu_zhiwen_id
     uint16_t zhiwen_page_id_gz;
@@ -9993,7 +9993,7 @@ static char * makeJson_cx_lock_in_list(void)
     char *p = NULL;
 
     pJsonRoot = cJSON_CreateObject();
-    cJSON_AddStringToObject(pJsonRoot, "type_rsp", "stc:cx_cx_lock_in_list");  //String类型
+    cJSON_AddStringToObject(pJsonRoot, "type_rsp", "stc:cx_lock_in_list");  //String类型
 
     pSubJson = cJSON_CreateObject();  //创建一个cJSON，用于嵌套数据
     cJSON_AddStringToObject(pSubJson, "type", "Buffer");  //在子cJSON下，增加一个String类型数据
@@ -10006,6 +10006,84 @@ static char * makeJson_cx_lock_in_list(void)
             cJSON_AddItemToArray(dataArray, cJSON_CreateNumber(buff_temp2[i]));
         }
         cJSON_AddItemToObject(pSubJson, "data", dataArray);
+    }
+
+    cJSON_AddItemToObject(pJsonRoot, "order_ary", pSubJson);  //将子cJSON加入到pJsonRoot
+
+
+
+    p = cJSON_Print(pJsonRoot);
+    if(NULL == p)
+    {
+        DB_PR("%s line=%d NULL\n", __func__, __LINE__);
+        cJSON_Delete(pJsonRoot);
+        return NULL;
+    }
+
+    cJSON_Delete(pJsonRoot);
+
+    return p;
+}
+
+
+
+static char * makeJson_cx_xm_one_attribute()
+{
+    // log_debug();
+    // u16 buff_temp2[SHENYU_GEZI_MAX]={0};
+    // uint16_t l=0;
+    // for(uint16_t i=1;i<=SHENYU_GEZI_MAX;i++)
+    // {
+    //     //vTaskDelay(1);
+    //     if(1== database_gz[i].state_fenpei_gz)
+    //     {
+
+    //         if(1== database_gz[i].lock)
+    //         {
+    //             buff_temp2[l] = database_gz[i].dIndx_gz;
+    //             DB_PR("b_temp2[l]= %03d ",buff_temp2[l]);//xiangmenhao
+    //             l++;
+    //             DB_PR("\r\n");
+    //         }
+
+    //     }
+
+    // }
+    if(0==database_gz[database_cw.dIndx].state_fenpei_gz)
+    {
+        return NULL;
+    }
+
+    cJSON *pJsonRoot = NULL;
+    cJSON *pSubJson = NULL;
+    cJSON *dataArray = cJSON_CreateArray();
+    char *p = NULL;
+
+    pJsonRoot = cJSON_CreateObject();
+    cJSON_AddStringToObject(pJsonRoot, "type_rsp", "stc:cx_xm_one_attribute");  //String类型
+
+    pSubJson = cJSON_CreateObject();  //创建一个cJSON，用于嵌套数据
+    cJSON_AddStringToObject(pSubJson, "type", "Buffer");  //在子cJSON下，增加一个String类型数据
+    
+    if(0==database_gz[database_cw.dIndx].state_fenpei_gz)
+    {
+        cJSON_AddNumberToObject(pSubJson, "xmh_find_flag", 0);  
+    }
+    else if(0!=database_gz[database_cw.dIndx].dIndx_gz)
+    {
+        cJSON_AddNumberToObject(pSubJson, "xmh_find_flag", 1);  
+
+        cJSON_AddNumberToObject(pSubJson, "doornumber", database_gz[database_cw.dIndx].dIndx_gz);  
+        cJSON_AddNumberToObject(pSubJson, "board_idx1", database_cw.dIndx/24+1);  
+        cJSON_AddNumberToObject(pSubJson, "lock_idx2", database_cw.dIndx%24); 
+        cJSON_AddNumberToObject(pSubJson, "dzx_type", database_gz[database_cw.dIndx].dzx_mode_gz);  
+        cJSON_AddNumberToObject(pSubJson, "cunwu_mode", database_gz[database_cw.dIndx].cunwu_mode_gz);
+        cJSON_AddNumberToObject(pSubJson, "lockin_state", database_gz[database_cw.dIndx].lock);  
+        cJSON_AddNumberToObject(pSubJson, "changqi_state", database_gz[database_cw.dIndx].changqi);
+        cJSON_AddNumberToObject(pSubJson, "cunwu_state", database_gz[database_cw.dIndx].state_gz);  
+        cJSON_AddNumberToObject(pSubJson, "zhiwen_page_id", database_gz[database_cw.dIndx].zhiwen_page_id_gz); 
+        cJSON_AddNumberToObject(pSubJson, "cunwu_phone_number", database_gz[database_cw.dIndx].phone_number_nvs_gz);  
+        cJSON_AddNumberToObject(pSubJson, "cunwu_mima", database_gz[database_cw.dIndx].mima_number_nvs_gz); 
     }
 
     cJSON_AddItemToObject(pJsonRoot, "order_ary", pSubJson);  //将子cJSON加入到pJsonRoot
@@ -11120,6 +11198,46 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
 
             free(rsp_str);
         }
+        else if(0==strcmp("stc:cx_xm_one_attribute",item->valuestring))
+        {
+            DB_PR("----------tcp stc:cx_xm_one_attribute---------\n");    
+            DB_PR("%s\n", "获取 order_ary 下的cjson对象");
+            item = cJSON_GetObjectItem(root, "order_ary");
+            DB_PR("%s\n", cJSON_Print(item));
+
+            item = cJSON_GetObjectItem(item, "door_idx");
+            DB_PR("%s\n", cJSON_Print(item));
+
+            DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
+            DB_PR("%d\n", item->valueint);
+
+            database_cw.dIndx = item->valueint;
+            if(database_cw.dIndx>SHENYU_GEZI_MAX)
+            {
+                DB_PR("----------err 0---------\n");   
+                return 0;
+            }
+
+            char *rsp_str;
+            
+            /* 最初的内存分配 */
+            rsp_str = (char *) malloc(1024);
+            rsp_str = makeJson_cx_xm_one_attribute();
+            if(NULL == rsp_str)
+            {
+                DB_PR("----------err 1---------\n");   
+                return 0;
+            }
+            DB_PR("rsp_str = \n%s\n\n", rsp_str);  //打印构造的字符串
+
+            int err = send(sock, rsp_str, strlen(rsp_str), 0);
+            if (err < 0) {
+                DB_PR( "Error occurred during sending: errno %d\n", errno);
+            }
+
+            free(rsp_str);
+        }
+        
         else
         {
             DB_PR("----------tcp aaaaaaaa other---------\n");   
