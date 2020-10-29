@@ -10026,7 +10026,173 @@ static char * makeJson_cx_lock_in_list(void)
 }
 
 
+static char * makeJson_cx_longtime_list(void)
+{
+    u16 buff_temp2[SHENYU_GEZI_MAX]={0};
+    uint16_t l=0;
+    for(uint16_t i=1;i<=SHENYU_GEZI_MAX;i++)
+    {
+        //vTaskDelay(1);
+        if(1== database_gz[i].state_fenpei_gz)
+        {
 
+            if(1== database_gz[i].changqi)
+            {
+                buff_temp2[l] = database_gz[i].dIndx_gz;
+                DB_PR("b_temp2[l]= %03d ",buff_temp2[l]);//xiangmenhao
+                l++;
+                DB_PR("\r\n");
+            }
+
+        }
+
+    }
+
+
+    cJSON *pJsonRoot = NULL;
+    cJSON *pSubJson = NULL;
+    cJSON *dataArray = cJSON_CreateArray();
+    char *p = NULL;
+
+    pJsonRoot = cJSON_CreateObject();
+    cJSON_AddStringToObject(pJsonRoot, "type_rsp", "stc:cx_longtime_list");  //String类型
+
+    pSubJson = cJSON_CreateObject();  //创建一个cJSON，用于嵌套数据
+    cJSON_AddStringToObject(pSubJson, "type", "Buffer");  //在子cJSON下，增加一个String类型数据
+    cJSON_AddNumberToObject(pSubJson, "data_quantity", l);  
+
+    if(l!=0)
+    {
+        for(uint16_t i=0;i<l;i++)
+        {
+            cJSON_AddItemToArray(dataArray, cJSON_CreateNumber(buff_temp2[i]));
+        }
+        cJSON_AddItemToObject(pSubJson, "data", dataArray);
+    }
+
+    cJSON_AddItemToObject(pJsonRoot, "order_ary", pSubJson);  //将子cJSON加入到pJsonRoot
+
+
+
+    p = cJSON_Print(pJsonRoot);
+    if(NULL == p)
+    {
+        DB_PR("%s line=%d NULL\n", __func__, __LINE__);
+        cJSON_Delete(pJsonRoot);
+        return NULL;
+    }
+
+    cJSON_Delete(pJsonRoot);
+
+    return p;
+}
+
+static char * makeJson_cx_guimenset_list(void)
+{
+    cJSON *pJsonRoot = NULL;
+    cJSON *pSubJson = NULL;
+    cJSON *dataArray = cJSON_CreateArray();
+    char *p = NULL;
+
+    int l=0;
+    while(guimen_x_gk_max[l]!=0)
+    {
+        l++;
+    }
+
+    pJsonRoot = cJSON_CreateObject();
+    cJSON_AddStringToObject(pJsonRoot, "type_rsp", "stc:cx_longtime_list");  //String类型
+
+    pSubJson = cJSON_CreateObject();  //创建一个cJSON，用于嵌套数据
+    cJSON_AddStringToObject(pSubJson, "type", "Buffer");  //在子cJSON下，增加一个String类型数据
+    cJSON_AddNumberToObject(pSubJson, "data_quantity", l);  
+
+    if(l!=0)
+    {
+        for(uint16_t i=0;i<l;i++)
+        {
+            cJSON_AddItemToArray(dataArray, cJSON_CreateNumber(guimen_x_gk_max[i]));
+        }
+        cJSON_AddItemToObject(pSubJson, "data", dataArray);
+    }
+
+    cJSON_AddItemToObject(pJsonRoot, "order_ary", pSubJson);  //将子cJSON加入到pJsonRoot
+
+
+
+    p = cJSON_Print(pJsonRoot);
+    if(NULL == p)
+    {
+        DB_PR("%s line=%d NULL\n", __func__, __LINE__);
+        cJSON_Delete(pJsonRoot);
+        return NULL;
+    }
+
+    cJSON_Delete(pJsonRoot);
+
+    return p;
+}
+
+static char * makeJson_cx_max_quantity_dzx(u8 dzx_mode)
+{
+    u16 buff_temp2[SHENYU_GEZI_MAX]={0};
+    uint16_t l=0;
+    for(uint16_t i=1;i<=SHENYU_GEZI_MAX;i++)
+    {
+        //vTaskDelay(1);
+        if(1== database_gz[i].state_fenpei_gz)
+        {
+
+            if(dzx_mode== database_gz[i].dzx_mode_gz)
+            {
+                buff_temp2[l] = database_gz[i].dIndx_gz;
+                DB_PR("b_temp2[l]= %03d ",buff_temp2[l]);//xiangmenhao
+                l++;
+                DB_PR("\r\n");
+            }
+
+        }
+
+    }
+
+
+    cJSON *pJsonRoot = NULL;
+    cJSON *pSubJson = NULL;
+    cJSON *dataArray = cJSON_CreateArray();
+    char *p = NULL;
+
+    pJsonRoot = cJSON_CreateObject();
+    cJSON_AddStringToObject(pJsonRoot, "type_rsp", "stc:cx_max_quantity_dzx");  //String类型
+
+    pSubJson = cJSON_CreateObject();  //创建一个cJSON，用于嵌套数据
+    cJSON_AddStringToObject(pSubJson, "type", "Buffer");  //在子cJSON下，增加一个String类型数据
+    cJSON_AddNumberToObject(pSubJson, "dzx_type", dzx_mode);  
+
+    if(dzx_mode!=0)
+    {
+        for(uint16_t i=0;i<l;i++)
+        {
+            cJSON_AddItemToArray(dataArray, cJSON_CreateNumber(buff_temp2[i]));
+        }
+        cJSON_AddItemToObject(pSubJson, "data", dataArray);
+    }
+
+    cJSON_AddItemToObject(pJsonRoot, "order_ary", pSubJson);  //将子cJSON加入到pJsonRoot
+
+
+
+    p = cJSON_Print(pJsonRoot);
+    if(NULL == p)
+    {
+        DB_PR("%s line=%d NULL\n", __func__, __LINE__);
+        cJSON_Delete(pJsonRoot);
+        return NULL;
+    }
+
+    cJSON_Delete(pJsonRoot);
+
+    return p;
+}
 static char * makeJson_cx_lock_one_attribute()
 {
 
@@ -11324,6 +11490,90 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
             /* 最初的内存分配 */
             rsp_str = (char *) malloc(1024);
             rsp_str = makeJson_cx_lock_in_list();
+            if(NULL == rsp_str)
+            {
+                DB_PR("----------err---------\n");   
+                return 0;
+            }
+            DB_PR("rsp_str = \n%s\n\n", rsp_str);  //打印构造的字符串
+
+            int err = send(sock, rsp_str, strlen(rsp_str), 0);
+            if (err < 0) {
+                DB_PR( "Error occurred during sending: errno %d\n", errno);
+            }
+
+            free(rsp_str);
+        }
+        else if(0==strcmp("stc:cx_longtime_list",item->valuestring))
+        {
+            DB_PR("----------tcp stc:cx_longtime_list---------\n");   
+            char *rsp_str;
+            
+            /* 最初的内存分配 */
+            rsp_str = (char *) malloc(1024);
+            rsp_str = makeJson_cx_longtime_list();
+            if(NULL == rsp_str)
+            {
+                DB_PR("----------err---------\n");   
+                return 0;
+            }
+            DB_PR("rsp_str = \n%s\n\n", rsp_str);  //打印构造的字符串
+
+            int err = send(sock, rsp_str, strlen(rsp_str), 0);
+            if (err < 0) {
+                DB_PR( "Error occurred during sending: errno %d\n", errno);
+            }
+
+            free(rsp_str);
+        }
+        else if(0==strcmp("stc:cx_guimenset_list",item->valuestring))
+        {
+            DB_PR("----------tcp stc:cx_guimenset_list---------\n");   
+            char *rsp_str;
+            
+            /* 最初的内存分配 */
+            rsp_str = (char *) malloc(1024);
+            rsp_str = makeJson_cx_guimenset_list();
+            if(NULL == rsp_str)
+            {
+                DB_PR("----------err---------\n");   
+                return 0;
+            }
+            DB_PR("rsp_str = \n%s\n\n", rsp_str);  //打印构造的字符串
+
+            int err = send(sock, rsp_str, strlen(rsp_str), 0);
+            if (err < 0) {
+                DB_PR( "Error occurred during sending: errno %d\n", errno);
+            }
+
+            free(rsp_str);
+        }
+        else if(0==strcmp("stc:cx_max_quantity_dzx",item->valuestring))
+        {
+            DB_PR("----------tcp stc:cx_max_quantity_dzx---------\n");   
+            DB_PR("%s\n", "获取 order_ary 下的cjson对象");
+            item = cJSON_GetObjectItem(root, "order_ary");
+            DB_PR("%s\n", cJSON_Print(item));
+
+            item = cJSON_GetObjectItem(item, "data");
+            DB_PR("%s\n", cJSON_Print(item));
+
+            DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
+            DB_PR("%d\n", item->valueint);
+
+
+            u8 dzx_mode = item->valueint;
+
+            DB_PR("-------cw_mode--=%d--.\r\n",dzx_mode); 
+
+
+
+
+            char *rsp_str;
+            
+            /* 最初的内存分配 */
+            rsp_str = (char *) malloc(1024);
+            rsp_str = makeJson_cx_max_quantity_dzx(dzx_mode);
             if(NULL == rsp_str)
             {
                 DB_PR("----------err---------\n");   
