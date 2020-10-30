@@ -2706,10 +2706,365 @@ u8 guimenset(uint16_t shengyu_all_max_temp,int16_t* guimen_x_gk_max_temp)
 
 
 
+u8 lock_in_exec(int32_t guimen_gk_temp)
+{
+    if(database_gz[database_cw.dIndx].lock == 1)
+    {
+        DB_PR("--break, have been be lock--.\r\n");   
+        send_cmd_to_lcd_pic(0x004a);
+        return_cause_has_be_lock = 1;
+        // break;
+        //goto wuci_xmh_lk;
+        return 0;
+    }
+    
+
+    if((database_gz[database_cw.dIndx].state_fenpei_gz == 0)
+        ||(database_cw.dIndx ==0))
+    {
+        // goto wuci_xmh_lk;
+        send_cmd_to_lcd_pic(FAIL_XMH_PIC);
+        return_cause = 3;
+        DB_PR("----admin --wu ci xiangmenhao-----.\r\n");
+        return 0;
+    }
+
+    DB_PR("------lock open--dIndx=%d--.\r\n",database_cw.dIndx); 
+    guimen_gk_temp = database_cw.dIndx ;
+
+    uint16_t j=0,k=0;
+
+    k = (guimen_gk_temp-1)/24 +1;
+    j = (guimen_gk_temp-1)%24 +1;
+    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+    DB_PR("-da-lock:%d ok--.\r\n",j);
+    // send_cmd_to_lock(k,j);
+
+    send_cmd_to_lcd_bl(0x1150,database_gz[database_cw.dIndx].dIndx_gz);
+
+    //send_cmd_to_lcd_pic(0x0024);
+    send_cmd_to_lcd_pic(LK_OK_PIC);
+
+
+    DB_PR("-----2-----[ * ] Starting audio pipeline");
+
+
+    DB_PR( "database_gz[database_cw.dIndx].state_gz = %d", database_gz[database_cw.dIndx].state_gz);
+    if((0 == database_gz[database_cw.dIndx].state_gz)
+        &&(0 == database_gz[database_cw.dIndx].changqi))
+    {
+        switch (database_gz[database_cw.dIndx].dzx_mode_gz)
+        {
+        case 1:
+            //d
+            shengyu_da --;
+            tongbu_gekou_shuliang_d(shengyu_da); 
+            break;
+        case 2:
+            //z
+            shengyu_zhong --;
+            tongbu_gekou_shuliang_z(shengyu_zhong); 
+            break;
+        case 3:
+            //x
+            shengyu_xiao --;
+            tongbu_gekou_shuliang_x(shengyu_xiao); 
+            break;
+
+        default:
+            break;
+        }
+
+        DB_PR("----test--.\r\n");  
+        
+
+        shengyu_all -- ;
+        tongbu_gekou_shuliang_all(shengyu_all);
+
+
+        nvs_wr_shengyu_da(1);
+        nvs_wr_shengyu_zhong(1);
+        nvs_wr_shengyu_xiao(1);
+
+    }
+
+
+ 
+    if(database_gz[database_cw.dIndx].changqi ==1)
+        database_gz[database_cw.dIndx].changqi =2;
+    DB_PR("--database_gz[database_cw.dIndx].changqi=%d\r\n",database_gz[database_cw.dIndx].changqi);
+
+    database_gz[database_cw.dIndx].lock =1;
+    //nvs_wr_cunwu_mode_gz(1);
+    //nvs_wr_dzx_mode_gz(1);
+
+    //nvs_wr_state_gz(1);
+    nvs_wr_glongtime_gz(1);
+    nvs_wr_glock_gz(1);
+
+
+    xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8192, (void*)TONE_TYPE_A007_SUODING, 10, NULL);
+
+    //if(database_gz[database_cw.dIndx].changqi == 1)
+    {
+        //update xianshi todo
+        tongbu_changqi();
+        tongbu_locked();   
+    } 
+    return 1;
+}
+
+u8 unlockin_exec(int32_t guimen_gk_temp)
+{
+    if((database_gz[database_cw.dIndx].state_fenpei_gz == 0)
+        ||(database_cw.dIndx ==0))
+    {
+        DB_PR("------no fenpei---------.\r\n");
+        send_cmd_to_lcd_pic(FAIL_XMH_PIC);
+        return_cause = 4;
+        DB_PR("----admin --wu ci xiangmenhao-----.\r\n");
+        return 0;
+        // goto wuci_xmh_unlk;
+    }
+
+    if(database_gz[database_cw.dIndx].lock == 0)
+    {
+        DB_PR("------no lock------.\r\n");
+        send_cmd_to_lcd_pic(0x0050);
+        return 0;
+        // break;
+        //goto wuci_xmh_unlk;//todo--------------
+    }
+    
+    DB_PR("------lock open--dIndx=%d--.\r\n",database_cw.dIndx); 
+    guimen_gk_temp = database_cw.dIndx ;
+
+    uint16_t j=0,k=0;
+
+
+    k = (guimen_gk_temp-1)/24 +1;
+    j = (guimen_gk_temp-1)%24 +1;
+    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+    DB_PR("-da-lock:%d ok--.\r\n",j);
+    // send_cmd_to_lock(k,j);
+
+    send_cmd_to_lcd_bl(0x1180,database_gz[database_cw.dIndx].dIndx_gz);
+
+    //send_cmd_to_lcd_pic(0x0024);
+    send_cmd_to_lcd_pic(UNLK_OK_PIC);
+
+
+
+    DB_PR("-----2-----[ * ] Starting audio pipeline\r\n");
+
+
+    DB_PR( "database_gz[database_cw.dIndx].state_gz = %d\r\n", database_gz[database_cw.dIndx].state_gz);
+    DB_PR( "database_gz[database_cw.dIndx].dIndx_gz = %d\r\n", database_gz[database_cw.dIndx].dIndx_gz);
+    if((0 == database_gz[database_cw.dIndx].state_gz)
+        &&(0 == database_gz[database_cw.dIndx].changqi))
+    {
+        switch (database_gz[database_cw.dIndx].dzx_mode_gz)
+        {
+        case 1:
+            //d
+            shengyu_da ++;
+            tongbu_gekou_shuliang_d(shengyu_da); 
+            break;
+        case 2:
+            //z
+            shengyu_zhong ++;
+            tongbu_gekou_shuliang_z(shengyu_zhong); 
+            break;
+        case 3:
+            //x
+            shengyu_xiao ++;
+            tongbu_gekou_shuliang_x(shengyu_xiao); 
+            break;
+
+        default:
+            break;
+        }
+
+        DB_PR("----test--.\r\n");  
+        
+
+        shengyu_all ++ ;
+        tongbu_gekou_shuliang_all(shengyu_all);
+
+
+        nvs_wr_shengyu_da(1);
+        nvs_wr_shengyu_zhong(1);
+        nvs_wr_shengyu_xiao(1);
+
+    }
+
+
+    
+    database_gz[database_cw.dIndx].lock =0;
+    nvs_wr_glock_gz(1);
+    //nvs_wr_cunwu_mode_gz(1);
+    //nvs_wr_dzx_mode_gz(1);
+    //nvs_wr_state_gz(1);
+
+
+    DB_PR("-1-database_gz[database_cw.dIndx].changqi=%d\r\n",database_gz[database_cw.dIndx].changqi);
+    if(2==database_gz[database_cw.dIndx].changqi)
+    {
+        database_gz[database_cw.dIndx].changqi =1;
+        nvs_wr_glongtime_gz(1);
+    }
+    DB_PR("-2-database_gz[database_cw.dIndx].changqi=%d\r\n",database_gz[database_cw.dIndx].changqi);
+
+
+
+    
+
+    xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8192, (void*)TONE_TYPE_A008_JIESUO, 10, NULL);
+    
+    tongbu_changqi();
+    tongbu_locked();   
+    
+
+
+    
+    return 1;
+}
 
 
 
 
+u8 clear_changqi(int guimen_gk_temp)
+{
+
+    if((database_gz[database_cw.dIndx].state_fenpei_gz == 0)
+        ||(database_gz[database_cw.dIndx].changqi == 0)
+        ||(database_cw.dIndx ==0))
+    {
+        send_cmd_to_lcd_pic(FAIL_XMH_PIC);
+        return_cause = 6;
+        DB_PR("----admin --wu ci xiangmenhao-----.\r\n");
+        // goto wuci_xmh_unchangqi;
+        return 0;
+    }
+
+    DB_PR("------lock open--dIndx=%d--.\r\n",database_cw.dIndx); 
+    guimen_gk_temp = database_cw.dIndx ;
+
+    uint16_t j=0,k=0;
+
+    k = (guimen_gk_temp-1)/24 +1;
+    j = (guimen_gk_temp-1)%24 +1;
+    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
+    DB_PR("-da-lock:%d ok--.\r\n",j);
+    send_cmd_to_lock(k,j);
+
+    send_cmd_to_lcd_bl(0x1120,database_gz[database_cw.dIndx].dIndx_gz);
+
+    DB_PR("-----2-----[ * ] Starting audio pipeline");
+    xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+    //send_cmd_to_lcd_pic(0x0024);
+    send_cmd_to_lcd_pic(UN_CHANGQI_OK_PIC);
+
+
+
+    DB_PR("-----2-----[ * ] Starting audio pipeline");
+
+
+    DB_PR( "database_gz[database_cw.dIndx].state_gz = %d", database_gz[database_cw.dIndx].state_gz);
+    DB_PR( "database_gz[database_cw.dIndx].dIndx_gz = %d", database_gz[database_cw.dIndx].dIndx_gz);
+    if(0 == database_gz[database_cw.dIndx].state_gz)
+    {
+        switch (database_gz[database_cw.dIndx].dzx_mode_gz)
+        {
+        case 1:
+            //d
+            shengyu_da ++;
+            tongbu_gekou_shuliang_d(shengyu_da); 
+            break;
+        case 2:
+            //z
+            shengyu_zhong ++;
+            tongbu_gekou_shuliang_z(shengyu_zhong); 
+            break;
+        case 3:
+            //x
+            shengyu_xiao ++;
+            tongbu_gekou_shuliang_x(shengyu_xiao); 
+            break;
+
+        default:
+            break;
+        }
+
+        DB_PR("----test--.\r\n");  
+        
+
+        shengyu_all ++ ;
+        tongbu_gekou_shuliang_all(shengyu_all);
+
+
+        nvs_wr_shengyu_da(1);
+        nvs_wr_shengyu_zhong(1);
+        nvs_wr_shengyu_xiao(1);
+
+    }
+
+
+    //if(0 != database_gz[database_cw.dIndx].state_gz)
+    {
+
+        // char key_name[15];//15
+        // esp_err_t err;
+
+
+        // //if(0 == database_gz[database_cw.dIndx].state_gz)
+
+        //if(database_gz[database_cw.dIndx].cunwu_mode_gz ==1)
+        {
+            DB_PR("----test--.\r\n");  
+            
+            Del_FR(database_gz[database_cw.dIndx].zhiwen_page_id_gz);
+            //del_zw_database(database_gz[database_cw.dIndx].zhiwen_page_id_gz);
+
+            database_cw.zhiwen_page_id =database_gz[database_cw.dIndx].zhiwen_page_id_gz;
+            database_ad.zhiwen_page_id_adm[database_cw.zhiwen_page_id] =0;
+            nvs_wr_adm_zwpageid_flag(1,database_cw.zhiwen_page_id);
+            database_gz[database_cw.dIndx].zhiwen_page_id_gz = 0;
+            nvs_wr_zw_pageid_gz(1);
+            
+        }
+        //else  if(database_gz[database_cw.dIndx].cunwu_mode_gz ==2)
+        {
+            DB_PR("----test--.\r\n");  
+            database_gz[database_cw.dIndx].phone_number_nvs_gz = 0;
+            database_gz[database_cw.dIndx].mima_number_nvs_gz = 0;
+            nvs_wr_phone_number_nvs_gz(1);
+            nvs_wr_mima_number_nvs_gz(1);
+        }
+
+        database_gz[database_cw.dIndx].cunwu_mode_gz = 0;
+        //database_gz[database_cw.dIndx].dzx_mode_gz = 0;
+
+        //database_gz[database_cw.dIndx].state_gz =0;
+
+        database_gz[database_cw.dIndx].changqi =0;
+        //database_gz[database_cw.dIndx].lock =0;
+        nvs_wr_cunwu_mode_gz(1);
+        //nvs_wr_dzx_mode_gz(1);
+
+        //nvs_wr_state_gz(1);
+        nvs_wr_glongtime_gz(1);
+        //nvs_wr_glock_gz(1);
+        
+        //if(database_gz[database_cw.dIndx].changqi == 1)
+        {
+            //update xianshi todo
+            tongbu_changqi();
+        }  
+
+    }
+    return 1;
+}
 static void echo_task2()//lcd
 {
     uint8_t buff_t[256]={0};
@@ -4258,138 +4613,13 @@ wuci_xmh_q:
                                     database_cw.dIndx =0;
                                     database_cw.dIndx = find_lock_index(guimen_gk_temp);
 
-
- 
-                                    if(database_gz[database_cw.dIndx].lock == 1)
-                                    {
-                                        DB_PR("--break, have been be lock--.\r\n");   
-                                        send_cmd_to_lcd_pic(0x004a);
-                                        return_cause_has_be_lock = 1;
-                                        break;
-                                        //goto wuci_xmh_lk;
-                                    }
-                                    
- 
-                                    if((database_gz[database_cw.dIndx].state_fenpei_gz == 0)
-                                       ||(database_cw.dIndx ==0))
-                                    {
-                                        goto wuci_xmh_lk;
-                                    }
-
-                                    DB_PR("------lock open--dIndx=%d--.\r\n",database_cw.dIndx); 
-                                    guimen_gk_temp = database_cw.dIndx ;
-
-                                    uint16_t j=0,k=0;
-
-                                    k = (guimen_gk_temp-1)/24 +1;
-                                    j = (guimen_gk_temp-1)%24 +1;
-                                    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
-                                    DB_PR("-da-lock:%d ok--.\r\n",j);
-                                    send_cmd_to_lock(k,j);
-
-                                    
-                                    // send_cmd_to_lock(k+1,j);
-                                    send_cmd_to_lcd_bl(0x1150,database_gz[database_cw.dIndx].dIndx_gz);
-
-                                    // uint8_t buff_temp1[6]={0x01,0x64,0x31};
-                                    // send_cmd_to_lcd_bl_len(0x1150,buff_temp1,6+5);
-            
-                                    //send_cmd_to_lcd_pic(0x0024);
-                                    send_cmd_to_lcd_pic(LK_OK_PIC);
-
-
-
-                                    DB_PR("-----2-----[ * ] Starting audio pipeline");
-
-
-                                    DB_PR( "database_gz[database_cw.dIndx].state_gz = %d", database_gz[database_cw.dIndx].state_gz);
-                                    if((0 == database_gz[database_cw.dIndx].state_gz)
-                                        &&(0 == database_gz[database_cw.dIndx].changqi))
-                                    {
-                                        switch (database_gz[database_cw.dIndx].dzx_mode_gz)
-                                        {
-                                        case 1:
-                                            //d
-                                            shengyu_da --;
-                                            tongbu_gekou_shuliang_d(shengyu_da); 
-                                            break;
-                                        case 2:
-                                            //z
-                                            shengyu_zhong --;
-                                            tongbu_gekou_shuliang_z(shengyu_zhong); 
-                                            break;
-                                        case 3:
-                                            //x
-                                            shengyu_xiao --;
-                                            tongbu_gekou_shuliang_x(shengyu_xiao); 
-                                            break;
-
-                                        default:
-                                            break;
-                                        }
-
-                                        DB_PR("----test--.\r\n");  
-                                        
-
-                                        shengyu_all -- ;
-                                        tongbu_gekou_shuliang_all(shengyu_all);
-
-
-                                        nvs_wr_shengyu_da(1);
-                                        nvs_wr_shengyu_zhong(1);
-                                        nvs_wr_shengyu_xiao(1);
-
-                                    }
- 
-
-                                    //if(0 != database_gz[database_cw.dIndx].state_gz)
-                                    {
-
-                                        // char key_name[15];//15
-                                        // esp_err_t err;
-
-                                        //database_gz[database_cw.dIndx].cunwu_mode_gz = 0;//del
-                                        //database_gz[database_cw.dIndx].dzx_mode_gz = 0;
-  
-                                        //database_gz[database_cw.dIndx].state_gz =0;
-
-                                        if(database_gz[database_cw.dIndx].changqi ==1)
-                                            database_gz[database_cw.dIndx].changqi =2;
-                                        DB_PR("--database_gz[database_cw.dIndx].changqi=%d\r\n",database_gz[database_cw.dIndx].changqi);
-                                        // else if(database_gz[database_cw.dIndx].changqi ==0)
-                                        //     database_gz[database_cw.dIndx].changqi =0;
-
-                                        database_gz[database_cw.dIndx].lock =1;
-                                        //nvs_wr_cunwu_mode_gz(1);
-                                        //nvs_wr_dzx_mode_gz(1);
-         
-                                        //nvs_wr_state_gz(1);
-                                        nvs_wr_glongtime_gz(1);
-                                        nvs_wr_glock_gz(1);
-
-                                        // if(0 == database_gz[database_cw.dIndx].state_gz)
-                                        // {
-                                        //     database_gz[database_cw.dIndx].phone_number_nvs_gz = 0;
-                                        //     database_gz[database_cw.dIndx].mima_number_nvs_gz = 0;
-                                        //     nvs_wr_phone_number_nvs_gz(1);
-                                        //     nvs_wr_mima_number_nvs_gz(1);
-                                        // }
-
-                                    }
-                                    xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8192, (void*)TONE_TYPE_A007_SUODING, 10, NULL);
-
-                                    //if(database_gz[database_cw.dIndx].changqi == 1)
-                                    {
-                                        //update xianshi todo
-                                        tongbu_changqi();
-                                        tongbu_locked();   
-                                    } 
-
+                                    lock_in_exec(guimen_gk_temp);
+    
 
                                 }
                                 else
                                 {
-wuci_xmh_lk:
+// wuci_xmh_lk:
                                     send_cmd_to_lcd_pic(FAIL_XMH_PIC);
                                     return_cause = 3;
                                     DB_PR("----admin --wu ci xiangmenhao-----.\r\n");
@@ -4440,150 +4670,12 @@ wuci_xmh_lk:
                                     database_cw.dIndx = find_lock_index(guimen_gk_temp);
 
 
-
- 
-                                    if((database_gz[database_cw.dIndx].state_fenpei_gz == 0)
-                                       ||(database_cw.dIndx ==0))
-                                    {
-                                        DB_PR("------no fenpei---------.\r\n");
-                                        goto wuci_xmh_unlk;
-                                    }
-
-                                    if(database_gz[database_cw.dIndx].lock == 0)
-                                    {
-                                        DB_PR("------no lock------.\r\n");
-                                        send_cmd_to_lcd_pic(0x0050);
-                                        break;
-                                        //goto wuci_xmh_unlk;//todo--------------
-                                    }
-                                    
-                                    DB_PR("------lock open--dIndx=%d--.\r\n",database_cw.dIndx); 
-                                    guimen_gk_temp = database_cw.dIndx ;
-
-                                    uint16_t j=0,k=0;
-
-
-                                    k = (guimen_gk_temp-1)/24 +1;
-                                    j = (guimen_gk_temp-1)%24 +1;
-                                    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
-                                    DB_PR("-da-lock:%d ok--.\r\n",j);
-                                    // send_cmd_to_lock(k,j);
-
-                                    send_cmd_to_lcd_bl(0x1180,database_gz[database_cw.dIndx].dIndx_gz);
-            
-                                    //send_cmd_to_lcd_pic(0x0024);
-                                    send_cmd_to_lcd_pic(UNLK_OK_PIC);
-
-
-
-                                    DB_PR("-----2-----[ * ] Starting audio pipeline\r\n");
-
-
-                                    DB_PR( "database_gz[database_cw.dIndx].state_gz = %d\r\n", database_gz[database_cw.dIndx].state_gz);
-                                    DB_PR( "database_gz[database_cw.dIndx].dIndx_gz = %d\r\n", database_gz[database_cw.dIndx].dIndx_gz);
-                                    if((0 == database_gz[database_cw.dIndx].state_gz)
-                                        &&(0 == database_gz[database_cw.dIndx].changqi))
-                                    {
-                                        switch (database_gz[database_cw.dIndx].dzx_mode_gz)
-                                        {
-                                        case 1:
-                                            //d
-                                            shengyu_da ++;
-                                            tongbu_gekou_shuliang_d(shengyu_da); 
-                                            break;
-                                        case 2:
-                                            //z
-                                            shengyu_zhong ++;
-                                            tongbu_gekou_shuliang_z(shengyu_zhong); 
-                                            break;
-                                        case 3:
-                                            //x
-                                            shengyu_xiao ++;
-                                            tongbu_gekou_shuliang_x(shengyu_xiao); 
-                                            break;
-
-                                        default:
-                                            break;
-                                        }
-
-                                        DB_PR("----test--.\r\n");  
-                                        
-
-                                        shengyu_all ++ ;
-                                        tongbu_gekou_shuliang_all(shengyu_all);
-
-
-                                        nvs_wr_shengyu_da(1);
-                                        nvs_wr_shengyu_zhong(1);
-                                        nvs_wr_shengyu_xiao(1);
-
-                                    }
-                                    // if(database_gz[database_cw.dIndx].changqi == 1)
-                                    // {
-                                    //     //update xianshi todo
-                                    //     ;
-                                    // }  
-
-                                    //if(0 != database_gz[database_cw.dIndx].state_gz)
-                                    {
-
-                                        // char key_name[15];//15
-                                        // esp_err_t err;
-
-                                        // database_gz[database_cw.dIndx].cunwu_mode_gz = 0;
-                                        //database_gz[database_cw.dIndx].dzx_mode_gz = 0;
-  
-                                        //database_gz[database_cw.dIndx].state_gz =0;
-
-                                       
-                                        database_gz[database_cw.dIndx].lock =0;
-                                        nvs_wr_glock_gz(1);
-                                        //nvs_wr_cunwu_mode_gz(1);
-                                        //nvs_wr_dzx_mode_gz(1);
-         
-                                        //nvs_wr_state_gz(1);
-
-
-
-                                        DB_PR("-1-database_gz[database_cw.dIndx].changqi=%d\r\n",database_gz[database_cw.dIndx].changqi);
-                                        if(2==database_gz[database_cw.dIndx].changqi)
-                                        {
-                                            database_gz[database_cw.dIndx].changqi =1;
-                                            nvs_wr_glongtime_gz(1);
-                                        }
-                                        DB_PR("-2-database_gz[database_cw.dIndx].changqi=%d\r\n",database_gz[database_cw.dIndx].changqi);
-                                        // else
-                                        // {
-                                        //     database_gz[database_cw.dIndx].changqi =0;
-                                        // }
-
-                                        // database_gz[database_cw.dIndx].changqi =0;
-                                        
-                                    
-
-
-
-                                        
-
-                                        xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8192, (void*)TONE_TYPE_A008_JIESUO, 10, NULL);
-                                        
-                                        tongbu_changqi();
-                                        tongbu_locked();   
-                                        
-                                        // //if(0 == database_gz[database_cw.dIndx].state_gz)
-                                        // {
-                                        //     database_gz[database_cw.dIndx].phone_number_nvs_gz = 0;
-                                        //     database_gz[database_cw.dIndx].mima_number_nvs_gz = 0;
-                                        //     nvs_wr_phone_number_nvs_gz(1);
-                                        //     nvs_wr_mima_number_nvs_gz(1);
-                                        // }
-
-                                    }
+                                    unlockin_exec(guimen_gk_temp);
 
                                 }
                                 else
                                 {
-wuci_xmh_unlk:
+// wuci_xmh_unlk:
                                     send_cmd_to_lcd_pic(FAIL_XMH_PIC);
                                     return_cause = 4;
                                     DB_PR("----admin --wu ci xiangmenhao-----.\r\n");
@@ -5011,13 +5103,6 @@ done_longtime_2:
 
                                 // send_cmd_to_lcd_bl(0x1100,0);//phone
                                 // send_cmd_to_lcd_bl(0x1110,0);//key
-                                
-
-
-                                
-
-
-                                // phone_weishu_ok =0;
 
 
                                 break;
@@ -5058,137 +5143,12 @@ done_longtime_2:
                                     database_cw.dIndx = find_lock_index(guimen_gk_temp);
 
 
-
-                                    
- 
-                                    if((database_gz[database_cw.dIndx].state_fenpei_gz == 0)
-                                        ||(database_gz[database_cw.dIndx].changqi == 0)
-                                       ||(database_cw.dIndx ==0))
-                                    {
-                                        goto wuci_xmh_unchangqi;
-                                    }
-
-                                    DB_PR("------lock open--dIndx=%d--.\r\n",database_cw.dIndx); 
-                                    guimen_gk_temp = database_cw.dIndx ;
-
-                                    uint16_t j=0,k=0;
-
-                                    k = (guimen_gk_temp-1)/24 +1;
-                                    j = (guimen_gk_temp-1)%24 +1;
-                                    DB_PR("------open------ board-addr k=%d, lock-addr j=%d--\r\n",k,j);
-                                    DB_PR("-da-lock:%d ok--.\r\n",j);
-                                    send_cmd_to_lock(k,j);
-
-                                    send_cmd_to_lcd_bl(0x1120,database_gz[database_cw.dIndx].dIndx_gz);
-
-                                    DB_PR("-----2-----[ * ] Starting audio pipeline");
-                                    xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
-                                    //send_cmd_to_lcd_pic(0x0024);
-                                    send_cmd_to_lcd_pic(UN_CHANGQI_OK_PIC);
-
-
-
-                                    DB_PR("-----2-----[ * ] Starting audio pipeline");
-
-
-                                    DB_PR( "database_gz[database_cw.dIndx].state_gz = %d", database_gz[database_cw.dIndx].state_gz);
-                                    DB_PR( "database_gz[database_cw.dIndx].dIndx_gz = %d", database_gz[database_cw.dIndx].dIndx_gz);
-                                    if(0 == database_gz[database_cw.dIndx].state_gz)
-                                    {
-                                        switch (database_gz[database_cw.dIndx].dzx_mode_gz)
-                                        {
-                                        case 1:
-                                            //d
-                                            shengyu_da ++;
-                                            tongbu_gekou_shuliang_d(shengyu_da); 
-                                            break;
-                                        case 2:
-                                            //z
-                                            shengyu_zhong ++;
-                                            tongbu_gekou_shuliang_z(shengyu_zhong); 
-                                            break;
-                                        case 3:
-                                            //x
-                                            shengyu_xiao ++;
-                                            tongbu_gekou_shuliang_x(shengyu_xiao); 
-                                            break;
-
-                                        default:
-                                            break;
-                                        }
-
-                                        DB_PR("----test--.\r\n");  
-                                        
-
-                                        shengyu_all ++ ;
-                                        tongbu_gekou_shuliang_all(shengyu_all);
-
-
-                                        nvs_wr_shengyu_da(1);
-                                        nvs_wr_shengyu_zhong(1);
-                                        nvs_wr_shengyu_xiao(1);
-
-                                    }
-
-
-                                    //if(0 != database_gz[database_cw.dIndx].state_gz)
-                                    {
-
-                                        // char key_name[15];//15
-                                        // esp_err_t err;
-
-
-                                        // //if(0 == database_gz[database_cw.dIndx].state_gz)
-
-                                        //if(database_gz[database_cw.dIndx].cunwu_mode_gz ==1)
-                                        {
-                                            DB_PR("----test--.\r\n");  
-                                            
-                                            Del_FR(database_gz[database_cw.dIndx].zhiwen_page_id_gz);
-                                            //del_zw_database(database_gz[database_cw.dIndx].zhiwen_page_id_gz);
-
-                                            database_cw.zhiwen_page_id =database_gz[database_cw.dIndx].zhiwen_page_id_gz;
-                                            database_ad.zhiwen_page_id_adm[database_cw.zhiwen_page_id] =0;
-                                            nvs_wr_adm_zwpageid_flag(1,database_cw.zhiwen_page_id);
-                                            database_gz[database_cw.dIndx].zhiwen_page_id_gz = 0;
-                                            nvs_wr_zw_pageid_gz(1);
-                                            
-                                        }
-                                        //else  if(database_gz[database_cw.dIndx].cunwu_mode_gz ==2)
-                                        {
-                                            DB_PR("----test--.\r\n");  
-                                            database_gz[database_cw.dIndx].phone_number_nvs_gz = 0;
-                                            database_gz[database_cw.dIndx].mima_number_nvs_gz = 0;
-                                            nvs_wr_phone_number_nvs_gz(1);
-                                            nvs_wr_mima_number_nvs_gz(1);
-                                        }
-
-                                        database_gz[database_cw.dIndx].cunwu_mode_gz = 0;
-                                        //database_gz[database_cw.dIndx].dzx_mode_gz = 0;
-  
-                                        //database_gz[database_cw.dIndx].state_gz =0;
-
-                                        database_gz[database_cw.dIndx].changqi =0;
-                                        //database_gz[database_cw.dIndx].lock =0;
-                                        nvs_wr_cunwu_mode_gz(1);
-                                        //nvs_wr_dzx_mode_gz(1);
-         
-                                        //nvs_wr_state_gz(1);
-                                        nvs_wr_glongtime_gz(1);
-                                        //nvs_wr_glock_gz(1);
-                                        
-                                        //if(database_gz[database_cw.dIndx].changqi == 1)
-                                        {
-                                            //update xianshi todo
-                                            tongbu_changqi();
-                                        }  
-
-                                    }
+                                    clear_changqi(guimen_gk_temp);
 
                                 }
                                 else
                                 {
-wuci_xmh_unchangqi:
+// wuci_xmh_unchangqi:
                                     send_cmd_to_lcd_pic(FAIL_XMH_PIC);
                                     return_cause = 6;
                                     DB_PR("----admin --wu ci xiangmenhao-----.\r\n");
@@ -9702,7 +9662,7 @@ void zhiwen_init(void )
 	}
     delay_ms(100);
     DB_PR("2y-通讯成功!!!\r\n");
-    DB_PR("2-波特率:%d   地址:%x\r\n",usart2_baund,AS608Addr);
+    DB_PR("2-波特率:%d, 地址:%x\r\n",usart2_baund,AS608Addr);
 
 
 	ensure=PS_ValidTempleteNum(&ValidN);//读库指纹个数
@@ -10408,7 +10368,28 @@ static char * makeJson_cx_cunwu_mode_list(u8 cw_mode)
     return p;
 }
 
-
+void tcp_client_send_heart_task(int sock)
+{
+    char* rsp_str="cabinet_heartbeat";
+    while(1)
+    {
+        DB_PR("-----%s line=%d NULL------\n", __func__, __LINE__);
+        int err = send(sock, rsp_str, strlen(rsp_str), 0);
+        if (err < 0) {
+            DB_PR( "Error occurred during sending: errno %d\n", errno);
+        }
+        if(1==tcp_connected_flag)
+        {
+            vTaskDelay(60000 / portTICK_PERIOD_MS);
+        }
+        else if(0==tcp_connected_flag)
+        {
+            DB_PR("--break--%s line=%d NULL------\n", __func__, __LINE__);
+            break;
+        }
+    }
+    vTaskDelete(NULL);
+}
 
 u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
 {
@@ -10762,6 +10743,66 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
                 tongbu_changqi();
                 //tongbu_locked();    
             }
+
+        }
+        else if(0==strcmp("stc:addlockin_door",item->valuestring))
+        {
+            DB_PR("----------tcp addlockin_door---------\n");   
+            DB_PR("\n%s\n", "--2--一步一步的获取 door_number 键值对:");
+
+            DB_PR("%s\n", "获取 door_number 下的cjson对象");
+            item = cJSON_GetObjectItem(root, "door_number");
+            DB_PR("%s\n", cJSON_Print(item));
+            DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
+            DB_PR("%d\n", item->valueint);
+            guimen_gk_temp = item->valueint;
+            DB_PR("---open lock-----guimen_gk_temp=%d\n", guimen_gk_temp);
+
+            DB_PR("-------guimen_gk_temp--dIndx=%d--.\r\n",guimen_gk_temp); 
+
+            database_cw.dIndx =0;
+            database_cw.dIndx = find_lock_index(guimen_gk_temp);
+            lock_in_exec(guimen_gk_temp);
+
+        }
+        else if(0==strcmp("stc:unlockin_door",item->valuestring))
+        {
+            DB_PR("----------tcp unlockin_door---------\n");   
+            DB_PR("\n%s\n", "--2--一步一步的获取 door_number 键值对:");
+
+            DB_PR("%s\n", "获取 door_number 下的cjson对象");
+            item = cJSON_GetObjectItem(root, "door_number");
+            DB_PR("%s\n", cJSON_Print(item));
+            DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
+            DB_PR("%d\n", item->valueint);
+            guimen_gk_temp = item->valueint;
+            DB_PR("---open lock-----guimen_gk_temp=%d\n", guimen_gk_temp);
+
+            DB_PR("-------guimen_gk_temp--dIndx=%d--.\r\n",guimen_gk_temp); 
+
+            database_cw.dIndx =0;
+            database_cw.dIndx = find_lock_index(guimen_gk_temp);
+            unlockin_exec(guimen_gk_temp);
+
+        }
+        else if(0==strcmp("stc:unlongtime_door",item->valuestring))
+        {
+            DB_PR("----------tcp unlongtime_door---------\n");   
+            DB_PR("\n%s\n", "--2--一步一步的获取 door_number 键值对:");
+
+            DB_PR("%s\n", "获取 door_number 下的cjson对象");
+            item = cJSON_GetObjectItem(root, "door_number");
+            DB_PR("%s\n", cJSON_Print(item));
+            DB_PR("%s:", item->string);   //看一下cjson对象的结构体中这两个成员的意思
+            DB_PR("%d\n", item->valueint);
+            guimen_gk_temp = item->valueint;
+            DB_PR("---open lock-----guimen_gk_temp=%d\n", guimen_gk_temp);
+
+            DB_PR("-------guimen_gk_temp--dIndx=%d--.\r\n",guimen_gk_temp); 
+
+            database_cw.dIndx =0;
+            database_cw.dIndx = find_lock_index(guimen_gk_temp);
+            clear_changqi(guimen_gk_temp);
 
         }
         else if(0==strcmp("stc:guimen_setting",item->valuestring))
@@ -11769,7 +11810,9 @@ static void tcp_client_task(void *pvParameters)
     while (1) {
         if(wifi_connected_flag==0)
         {
+            DB_PR( "-------wifi_connected_flag ==0-------\n");
             // vTaskDelete(NULL);
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
             continue;
         }
 
@@ -11786,6 +11829,7 @@ static void tcp_client_task(void *pvParameters)
             if (resolve_dns(HOST_IP_ADDR, &dest_addr) < 0) {
                 // return -1;
                 // vTaskDelete(NULL);
+                DB_PR( "-------resolve_dns<0-------\n");
                 continue;
             }
         }
@@ -11804,10 +11848,11 @@ static void tcp_client_task(void *pvParameters)
         // int sock
         int sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
         if (sock < 0) {
-            DB_PR( "Unable to create socket: errno %d\n", errno);
+            DB_PR( "Unable to create socket: errno %d\n", errno);//23 todo
             // break;
-            shutdown(sock, 0);
+            shutdown(sock, 0);//?
             close(sock);
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
             continue;
         }
         DB_PR( "Socket created, connecting to %s:%d\n", HOST_IP_ADDR, PORT);//////////
@@ -11837,9 +11882,9 @@ static void tcp_client_task(void *pvParameters)
         tcp_connected_flag =1;
         gpio_set_level(LED_RED, 0);
 
-
-        // xTaskCreate(tcp_client_send_task, "tcp_client_send", 4096, NULL, 5, NULL);
         err = send(sock, payload, strlen(payload), 0);
+        xTaskCreate(tcp_client_send_heart_task, "tcp_client_send", 4096, (void*)sock, 5, NULL);
+
         if (err < 0) {
             DB_PR( "Error occurred during sending: errno %d\n", errno);
         }
@@ -11847,7 +11892,7 @@ static void tcp_client_task(void *pvParameters)
         while (1) {
             if(wifi_connected_flag==0)
             {
-                DB_PR( "\n -----------0 tcp------------- \n");
+                DB_PR( "---2----wifi_connected_flag ==0-------\n");
                 // vTaskDelete(NULL);
                 continue;
             }
