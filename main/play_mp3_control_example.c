@@ -153,6 +153,7 @@ esp_timer_handle_t oneshot_timer;
 bool sys_running_flag;
 
 bool tcp_connected_flag;
+bool iot_2G_connected_flag;
 
 bool wifi_connected_flag;
 u8 wifi_peiwang_over_flag;
@@ -328,6 +329,7 @@ uint16_t len_rx;
 
 uint8_t data_rx0[BUF_SIZE] = {0};//485 dtu debug        data_rx2
 int len_rx0;
+uint8_t flag_rx0;
 
 uint8_t data_rx2_m[BUF_SIZE] = {0};
 int len_rx2_m;
@@ -7103,9 +7105,45 @@ static void echo_task()
             }
             DB_PR("] \n");
 
+            flag_rx0 =1;
+            DB_PR("-----2----flag_rx0=%u\r\n", flag_rx0);
+            if(NULL!=strstr((char*)data_rx0,"CONNECT OK\r"))
+            {
+                iot_2G_connected_flag=1;
+                DB_PR3("---------1----------\n");
+            }
+            else if(NULL!=strstr((char*)data_rx0,"CLOSED\r"))
+            {
+                iot_2G_connected_flag=0;
+                DB_PR3("---------2----------\n");
+            }
+            else if(NULL!=strstr((char*)data_rx0,"AT Ready\r"))
+            {
+                iot_2G_connected_flag=0;
+                DB_PR3("---------3----------\n");
+            }
+            else if(NULL!=strstr((char*)data_rx0,"OK\r\r"))
+            {
+                DB_PR3("---------4----------\n");
+            }
+            else if(NULL!=strstr((char*)data_rx0,"+CME ERROR:"))//53   no sim 58
+            {
+                iot_2G_connected_flag=0;
+                DB_PR3("---------100----------\n");
+                uart_write_bytes(UART_NUM_DUBUG, (const char *) data_rx0, len_rx0);
+                // DB_PR3("ATO\n");
+                vTaskDelay(500 / portTICK_PERIOD_MS);
+            }
+            else //SIM not inserted
+            {
+                uart_write_bytes(UART_NUM_DUBUG, (const char *) data_rx0, len_rx0);//有效数据
+                DB_PR3("---------0----------\n");
+            }
+
+
             //vTaskDelay(2 / portTICK_PERIOD_MS);
             // xTaskCreate(echo_task0, "uart_echo_task0",2* 1024, NULL, 2, NULL);//uart1
-            uart_write_bytes(UART_NUM_DUBUG, (const char *) data_rx0, len_rx0);//debug todo---------
+            // uart_write_bytes(UART_NUM_DUBUG, (const char *) data_rx0, len_rx0);//debug todo---------
 
         }
 
@@ -9923,6 +9961,65 @@ static char * makeJson_cx_shengyu_kongxiang_quantity_all(void)
 
 
 
+static char * makeJson_cx_wifi_connect_state(void)
+{
+    cJSON *pJsonRoot = NULL;
+    cJSON *pSubJson = NULL;
+    char *p = NULL;
+
+    pJsonRoot = cJSON_CreateObject();
+    cJSON_AddStringToObject(pJsonRoot, "type_rsp", "stc:cx_wifi_connect_state");  //String类型
+
+    pSubJson = cJSON_CreateObject();  //创建一个cJSON，用于嵌套数据
+    cJSON_AddStringToObject(pSubJson, "type", "Value");  //在子cJSON下，增加一个String类型数据
+    cJSON_AddNumberToObject(pSubJson, "data", wifi_connected_flag);  
+    cJSON_AddItemToObject(pJsonRoot, "order_ary", pSubJson);  //将子cJSON加入到pJsonRoot
+
+    p = cJSON_Print(pJsonRoot);
+    if(NULL == p)
+    {
+        DB_PR("%s line=%d NULL\n", __func__, __LINE__);
+        cJSON_Delete(pJsonRoot);
+        return NULL;
+    }
+
+    cJSON_Delete(pJsonRoot);
+
+    return p;
+}
+
+
+static char * makeJson_cx_2G_connect_state(void)
+{
+    cJSON *pJsonRoot = NULL;
+    cJSON *pSubJson = NULL;
+    char *p = NULL;
+
+    // u8 iot_2g_state=0;
+
+
+
+    pJsonRoot = cJSON_CreateObject();
+    cJSON_AddStringToObject(pJsonRoot, "type_rsp", "stc:cx_2G_connect_state");  //String类型
+
+    pSubJson = cJSON_CreateObject();  //创建一个cJSON，用于嵌套数据
+    cJSON_AddStringToObject(pSubJson, "type", "Value");  //在子cJSON下，增加一个String类型数据
+    cJSON_AddNumberToObject(pSubJson, "data", iot_2G_connected_flag);  
+    cJSON_AddItemToObject(pJsonRoot, "order_ary", pSubJson);  //将子cJSON加入到pJsonRoot
+
+    p = cJSON_Print(pJsonRoot);
+    if(NULL == p)
+    {
+        DB_PR("%s line=%d NULL\n", __func__, __LINE__);
+        cJSON_Delete(pJsonRoot);
+        return NULL;
+    }
+
+    cJSON_Delete(pJsonRoot);
+
+    return p;
+}
+
 
 static char * makeJson_cx_lock_in_list(void)
 {
@@ -11509,6 +11606,50 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
             /* 最初的内存分配 */
             rsp_str = (char *) malloc(1024);
             rsp_str = makeJson_cx_shengyu_kongxiang_quantity_all();
+            if(NULL == rsp_str)
+            {
+                DB_PR("----------err---------\n");   
+                return 0;
+            }
+            DB_PR("rsp_str = \n%s\n\n", rsp_str);  //打印构造的字符串
+
+            int err = send(sock, rsp_str, strlen(rsp_str), 0);
+            if (err < 0) {
+                DB_PR( "Error occurred during sending: errno %d\n", errno);
+            }
+
+            free(rsp_str);
+        }
+        else if(0==strcmp("stc:cx_wifi_connect_state",item->valuestring))
+        {
+            DB_PR("----------tcp stc:cx_wifi_connect_state---------\n");   
+            char *rsp_str;
+            
+            /* 最初的内存分配 */
+            rsp_str = (char *) malloc(1024);
+            rsp_str = makeJson_cx_wifi_connect_state();
+            if(NULL == rsp_str)
+            {
+                DB_PR("----------err---------\n");   
+                return 0;
+            }
+            DB_PR("rsp_str = \n%s\n\n", rsp_str);  //打印构造的字符串
+
+            int err = send(sock, rsp_str, strlen(rsp_str), 0);
+            if (err < 0) {
+                DB_PR( "Error occurred during sending: errno %d\n", errno);
+            }
+
+            free(rsp_str);
+        }
+        else if(0==strcmp("stc:cx_2G_connect_state",item->valuestring))
+        {
+            DB_PR("----------tcp stc:cx_2G_connect_state---------\n");   
+            char *rsp_str;
+            
+            /* 最初的内存分配 */
+            rsp_str = (char *) malloc(1024);
+            rsp_str = makeJson_cx_2G_connect_state();
             if(NULL == rsp_str)
             {
                 DB_PR("----------err---------\n");   
@@ -13450,6 +13591,7 @@ void app_main(void)
             DB_PR("----222222 =NULL-----.\r\n");
         }
         xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A010_GMSET_FAIL, 10, (TaskHandle_t* )&taskhandle_mp3);
+        //todo pic
         vTaskDelay(3000 / portTICK_PERIOD_MS);//on 
     }
     else
@@ -13602,5 +13744,14 @@ void app_main(void)
 
 
 
+    // DB_PR3("+++");
+    // vTaskDelay(100 / portTICK_PERIOD_MS);//on 
+
+    // DB_PR3("AT+CFUN=1,1\r");
+    // vTaskDelay(100 / portTICK_PERIOD_MS);//on 
+    // DB_PR3("AT+CFUN=1,1\r");
+    // vTaskDelay(100 / portTICK_PERIOD_MS);//on 
+
+    // // DB_PR3("ATO\r");
 
 }
