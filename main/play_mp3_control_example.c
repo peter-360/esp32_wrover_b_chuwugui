@@ -987,7 +987,7 @@ u16 ValidN;//模块内有效指纹个数
 u8** kbd_tbl;
 void Add_FR_First(void);	//录指纹
 void Add_FR(void);	//录指纹
-void Del_FR(u16 num);	//删除指纹
+u8 Del_FR(u16 num);	//删除指纹
 void press_FR(void);//刷指纹
 void ShowErrMessage(u8 ensure);//显示确认码错误信息
 
@@ -2625,8 +2625,16 @@ u8 guimenset(uint16_t shengyu_all_max_temp,int16_t* guimen_x_gk_max_temp)
                 if(( database_cw.zhiwen_page_id!=0)
                     ||(database_ad.zhiwen_page_id_adm[database_cw.zhiwen_page_id]!=0))
                 {
-                    Del_FR(database_cw.zhiwen_page_id);
-
+                    if(1==Del_FR(database_cw.zhiwen_page_id))
+                    {
+                        DB_PR("--zw del ok--.\r\n"); 
+                    }
+                    else
+                    {
+                        DB_PR("--zw del err--.\r\n"); 
+                        // continue;
+                    }
+                    
                     database_ad.zhiwen_page_id_adm[database_cw.zhiwen_page_id] =0;
                     nvs_wr_adm_zwpageid_flag(1,database_cw.zhiwen_page_id);
 
@@ -5432,7 +5440,12 @@ done_mima_nosame:
                                     DB_PR("--2 quwu zw--.\r\n");  
                                     send_cmd_to_lcd_pic(0x0009);//0x000c
                                 }
-                                else if(return_cause_zw_handshake_fail == 1)
+                                if(return_cause_zw_handshake_fail == 3)//admin mode
+                                {
+                                    DB_PR("--2 admin mode--.\r\n");  
+                                    send_cmd_to_lcd_pic(0x0011);
+                                }
+                                else if(return_cause_zw_handshake_fail == 1)//cun
                                 {
                                     if(database_cw_adm.changqi_tmp == 1)
                                     {
@@ -8685,19 +8698,23 @@ void press_FR(void)
 }
 
 //删除指纹
-void Del_FR(u16 num)
+u8 Del_FR(u16 num)
 {
-
     DB_PR("1******del***pageid hex**********num=%x \r\n",num);
     DB_PR("2******del***pageid dec**********num=%d \r\n",num);
 
-    // if(HandShakeFlag ==1)
-    // {
-    //     return_cause_zw_handshake_fail =3;
-    //     send_cmd_to_lcd_pic(0x004D);
-    //     DB_PR("---zhiwen connect fail\r\n");
-    //     return;
-    // }
+    if(HandShakeFlag ==1)
+    {
+        if((return_cause_zw_handshake_fail !=2)||(return_cause_zw_handshake_fail !=1))
+        {
+            return_cause_zw_handshake_fail =3;
+        }
+        DB_PR("return_cause_zw_handshake_fail=%d \r\n",return_cause_zw_handshake_fail);
+        
+        send_cmd_to_lcd_pic(0x004D);
+        DB_PR("---zhiwen connect fail\r\n");
+        return 0;
+    }
 	u8  ensure;
 	//u16 num;
 	//LCD_Fill(0,100,lcddev.width,160,WHITE);
@@ -8708,21 +8725,19 @@ void Del_FR(u16 num)
 	delay_ms(50);
 	//AS608_load_keyboard(0,170,(u8**)kbd_delFR);
 	//num=GET_NUM();//获取返回的数值
+    //ensure=PS_Empty();//清空指纹库
 
-	if(num==0xFFFF)
-        return ;
-		//goto MENU ; //返回主页面-------------
-	// else if(num==0xFF00)
-	// 	ensure=PS_Empty();//清空指纹库
-	else 
-		ensure=PS_DeletChar(num,1);//删除单个指纹
+    ensure=PS_DeletChar(num,1);//删除单个指纹        
 	if(ensure==0)
 	{
 		//LCD_Fill(0,120,lcddev.width,160,WHITE);
 		DB_PR("---del ok -----删除指纹成功 \r\n");		
 	}
     else
+    {
+        return 0;
 		ShowErrMessage(ensure);	
+    }
 	delay_ms(1200);
 	PS_ValidTempleteNum(&ValidN);//读库指纹个数
 	//LCD_ShowNum(56,80,AS608Para.PS_max-ValidN,3,16);
@@ -8735,6 +8750,7 @@ void Del_FR(u16 num)
     DB_PR("AS608Para.PS_max=%d, ValidN =%d \r\n",AS608Para.PS_max, ValidN);
     DB_PR("库容量:%d     对比等级: %d\r\n",AS608Para.PS_max-ValidN,AS608Para.PS_level);
 
+    return 1;
 }
 
 void del_zw_database(u16 num)
@@ -9451,6 +9467,21 @@ void read_nvs_guizi_all()
     uart0_debug_data_dec(page_id_temp1,j);
     DB_PR("--fail--has use zhiwen idx\r\n");
     uart0_debug_data_dec(page_id_temp2,k);
+
+    DB_PR("ValidN =%d \r\n",ValidN);
+    if(k==ValidN)
+    {
+        DB_PR("---------------zw mcu --yizhi yes\r\n");
+    }
+    else if(k<ValidN)
+    {
+        DB_PR("---------------zw mcu --yihzi no, k<ValidN\r\n");
+    }
+    else// if(k>ValidN)
+    {
+        DB_PR("---------------zw mcu --yihzi no, k>ValidN\r\n");
+    }
+    DB_PR("\r\n");
     
 
 
