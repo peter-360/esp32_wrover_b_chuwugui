@@ -548,7 +548,7 @@ u8 PS_ReadIndexTable(u8 NotePageNum,u8 *Byte32)
 
 	flag_rx2 =0;
 	DB_PR("-----0----flag_rx2=%u\r\n", flag_rx2);
-	delay_ms(50);//----------250-----------
+	delay_ms(250);//----------250-----------
 
   data=JudgeStr(2000);
 	if(data)

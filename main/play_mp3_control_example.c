@@ -9476,11 +9476,11 @@ void read_nvs_guizi_all()
     }
     else if(k<ValidN)
     {
-        DB_PR("---------------zw mcu --yihzi no, k<ValidN\r\n");
+        DB_PR("---------------zw mcu --yizhi no, k<ValidN\r\n");
     }
     else// if(k>ValidN)
     {
-        DB_PR("---------------zw mcu --yihzi no, k>ValidN\r\n");
+        DB_PR("---------------zw mcu --yizhi no, k>ValidN\r\n");
     }
     DB_PR("\r\n");
     
@@ -9703,7 +9703,94 @@ static void oneshot_timer_callback(void* arg)
 
 
 bool zw_idx_table_global[ZHIWEN_PAGE_ID_MAX];
-void zhiwen_init(void )
+
+
+
+void zw_suoyin_biao(void )
+{
+    bzero(zw_idx_table_global,ZHIWEN_PAGE_ID_MAX);
+
+    //EF 01 FF FF FF FF 07 00 23 0B 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 35 
+    //EF 01 FF FF FF FF 07 00 23 00 21 08 00 00 20 00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 F3 
+
+
+    // u64 zw_idx_tb1=0;//4个64的
+    // ensure=PS_ReadIndexTable(ZW_TBL_IDX0,(uint8_t*)&zw_idx_tb1);//NotePageNum
+	// if(ensure!=0x00)
+    // {
+    //     DB_PR("3-ensure = %d\r\n",ensure);
+    //     ShowErrMessage(ensure);//显示确认码错误信息	
+    // }
+    // uart0_debug_data_h( (uint8_t*) &zw_idx_tb1, 32);
+
+    // DB_PR("zw_idx_tb1 = 0X%llx\r\n",zw_idx_tb1);
+    // //DB_PR("zw_idx_tb1= 0x%016I64x", zw_idx_tb1);
+
+    u8 zw_idx_table1[32]={0};
+    u8 zw_idx_table2[32]={0};
+
+    u8 ensure;
+    ensure=PS_ReadIndexTable(ZW_TBL_IDX0,zw_idx_table1);//NotePageNum
+	if(ensure!=0x00)
+    {
+        DB_PR("3-ensure = %d\r\n",ensure);
+        ShowErrMessage(ensure);//显示确认码错误信息	
+    }
+    else
+    {
+        uart0_debug_data_h( (uint8_t*) zw_idx_table1, 32);
+        DB_PR("\r\n------0 - 255-----\r\n");
+        for(int i=0;i<32;i++)
+        {
+            for(int j=0;j<8;j++)
+            {
+                zw_idx_table_global[i*8+j]=  zw_idx_table1[i] &(1<<j);  
+                if(0!=zw_idx_table_global[i*8+j])
+                    DB_PR("--1--no  valid used---idx = %03d, table=%d\r\n",i*8+j, zw_idx_table_global[i*8+j]);   
+                else
+                    DB_PR("*1*yes valid used---idx = %03d, table=%d\r\n",i*8+j, zw_idx_table_global[i*8+j]);       
+            }
+
+        }
+        // uart0_debug_data_h( (uint8_t*) zw_idx_table_global, 256);
+    }
+
+
+
+
+
+    if((AS608Para.PS_max>256)&&(AS608Para.PS_max<=512))
+    {
+        DB_PR("\r\n------256 - 511-----\r\n");
+        ensure=PS_ReadIndexTable(ZW_TBL_IDX1,zw_idx_table2);//>256 300枚指纹
+        if(ensure!=0x00)
+        {
+            DB_PR("4-ensure = %d\r\n",ensure);
+            ShowErrMessage(ensure);//显示确认码错误信息	
+        }
+        else
+        {
+            uart0_debug_data_h( (uint8_t*) zw_idx_table2, 32);
+            for(int i=32;i<64;i++)
+            {
+                for(int j=0;j<8;j++)
+                {
+                    zw_idx_table_global[i*8+j]=  zw_idx_table1[i] &(1<<j);  
+                    if(0!=zw_idx_table_global[i*8+j])
+                        DB_PR("--2--no valid used---idx = %03d, table=%d\r\n",i*8+j, zw_idx_table_global[i*8+j]);   
+                    else
+                        DB_PR("*2*yes valid used---idx = %03d, table=%d\r\n",i*8+j, zw_idx_table_global[i*8+j]);       
+                }
+
+            }  
+        }
+        
+    }
+
+
+}
+
+void zhiwen_init1(void )
 {
     u8 ensure;
     DB_PR("与AS608模块握手....\r\n");
@@ -9769,92 +9856,173 @@ void zhiwen_init(void )
     }
 
 
-    //EF 01 FF FF FF FF 07 00 23 0B 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 35 
-    //EF 01 FF FF FF FF 07 00 23 00 21 08 00 00 20 00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 F3 
+
+}
 
 
-    // u64 zw_idx_tb1=0;//4个64的
-    // ensure=PS_ReadIndexTable(ZW_TBL_IDX0,(uint8_t*)&zw_idx_tb1);//NotePageNum
-	// if(ensure!=0x00)
-    // {
-    //     DB_PR("3-ensure = %d\r\n",ensure);
-    //     ShowErrMessage(ensure);//显示确认码错误信息	
-    // }
-    // uart0_debug_data_h( (uint8_t*) &zw_idx_tb1, 32);
+void zhiwen_init2(void )
+{
+    uint16_t id=0,iz=0,ix=0;
+    zw_suoyin_biao();
 
-    // DB_PR("zw_idx_tb1 = 0X%llx\r\n",zw_idx_tb1);
-    // //DB_PR("zw_idx_tb1= 0x%016I64x", zw_idx_tb1);
 
-    u8 zw_idx_table1[32]={0};
-    u8 zw_idx_table2[32]={0};
-
-    ensure=PS_ReadIndexTable(ZW_TBL_IDX0,zw_idx_table1);//NotePageNum
-	if(ensure!=0x00)
+    for(int i=0;i<AS608Para.PS_max;i++)
     {
-        DB_PR("3-ensure = %d\r\n",ensure);
-        ShowErrMessage(ensure);//显示确认码错误信息	
-    }
-    else
-    {
-        
-        uart0_debug_data_h( (uint8_t*) zw_idx_table1, 32);
-        DB_PR("\r\n------0 - 255-----\r\n");
-        for(int i=0;i<32;i++)
+        DB_PR("i= %d\r\n",i);
+        DB_PR("database_ad.zhiwen_page_id_adm[i] = %d\r\n",database_ad.zhiwen_page_id_adm[i]);
+        DB_PR("zw_idx_table_global[i] = %d\r\n",zw_idx_table_global[i]);
+        if(database_ad.zhiwen_page_id_adm[i] < zw_idx_table_global[i])//0<1 
         {
-            for(int j=0;j<8;j++)
-            {
-                zw_idx_table_global[i*8+j]=  zw_idx_table1[i] &(1<<j);  
-                if(0!=zw_idx_table_global[i*8+j])
-                    DB_PR("no  valid used---idx = %03d, table=%d\r\n",i*8+j, zw_idx_table_global[i*8+j]);   
-                else
-                    DB_PR("yes valid used---idx = %03d, table=%d\r\n",i*8+j, zw_idx_table_global[i*8+j]);       
-            }
-
+            DB_PR("----------11 esp32 lib no,zw lib yes,----------\r\n");
+            /* fail, esp32 lib no,zw lib yes, changjian*/
+            Del_FR(i);
         }
-        // uart0_debug_data_h( (uint8_t*) zw_idx_table_global, 256);
-    }
-
-
-
-
-
-    if((AS608Para.PS_max>256)&&(AS608Para.PS_max<=512))
-    {
-        DB_PR("\r\n------256 - 511-----\r\n");
-        ensure=PS_ReadIndexTable(ZW_TBL_IDX1,zw_idx_table2);//>256 300枚指纹
-        if(ensure!=0x00)
+        else if(database_ad.zhiwen_page_id_adm[i] > zw_idx_table_global[i])//1>0
         {
-            DB_PR("4-ensure = %d\r\n",ensure);
-            ShowErrMessage(ensure);//显示确认码错误信息	
+            DB_PR("----------22 esp32 lib yes,zw lib no----------\r\n");
+            // /* fail, esp32 lib yes,zw lib no*/
+            // database_ad.zhiwen_page_id_adm[i] =0;
+            // nvs_wr_adm_zwpageid_flag(1,i);
+
+            // for(int j=1;j<=SHENYU_GEZI_MAX;j++)
+            // {
+            //     if(database_gz[j].zhiwen_page_id_gz == i)
+            //     {
+            //         database_cw.dIndx = j;
+            //         database_gz[database_cw.dIndx].zhiwen_page_id_gz =0;
+            //         nvs_wr_zw_pageid_gz(1);
+
+            //         if(database_gz[database_cw.dIndx].dIndx_gz !=0)
+            //         {
+            //             database_gz[database_cw.dIndx].dIndx_gz =0;
+            //             // database_gz[database_cw.dIndx].state_fenpei_gz =0;
+            //             nvs_wr_index_gz(1);
+            //         }
+
+
+            //         if( database_gz[database_cw.dIndx].changqi !=0)
+            //         {
+            //             database_gz[database_cw.dIndx].changqi = 0;
+            //             nvs_wr_glongtime_gz(1);
+            //         }
+
+            //         if( database_gz[database_cw.dIndx].lock!=0)
+            //         {
+            //             database_gz[database_cw.dIndx].lock = 0;
+            //             nvs_wr_glock_gz(1);
+            //         }
+
+            //         if( database_gz[database_cw.dIndx].cunwu_mode_gz!=0)
+            //         {
+            //             database_gz[database_cw.dIndx].cunwu_mode_gz = 0;
+            //             nvs_wr_cunwu_mode_gz(1);
+
+            //         }
+
+            //         if( database_gz[database_cw.dIndx].dzx_mode_gz!=3)
+            //         {
+            //             database_gz[database_cw.dIndx].dzx_mode_gz = 3;//todo
+            //             nvs_wr_dzx_mode_gz(1);
+            //         }
+
+            //         if( (database_gz[database_cw.dIndx].phone_number_nvs_gz!=0)
+            //             ||( database_gz[database_cw.dIndx].mima_number_nvs_gz != 0))
+            //         {
+            //             database_gz[database_cw.dIndx].phone_number_nvs_gz = 0;
+            //             database_gz[database_cw.dIndx].mima_number_nvs_gz = 0;
+            //             nvs_wr_phone_number_nvs_gz(1);
+            //             nvs_wr_mima_number_nvs_gz(1);
+            //         }
+
+
+            //         if( database_gz[database_cw.dIndx].state_gz!=0)
+            //         {
+            //             database_gz[database_cw.dIndx].state_gz =0;
+            //             nvs_wr_state_gz(1);
+            //         }
+
+
+
+
+            //         if(database_gz[database_cw.dIndx].dzx_mode_gz ==1)
+            //         {
+            //             id++;
+            //         }
+            //         else if(database_gz[database_cw.dIndx].dzx_mode_gz ==2)
+            //         {
+            //             iz++;
+            //         }
+            //         else if(database_gz[database_cw.dIndx].dzx_mode_gz ==3)
+            //         {
+            //             ix++;
+            //         }
+            //     }                
+            // }
+
+
+
+            // shengyu_all =id+ iz +ix;
+            // shengyu_xiao = ix;
+            // shengyu_zhong = iz;
+            // shengyu_da = id;
+
+            // DB_PR("---shengyu_all=%d----\n",shengyu_all);
+            // DB_PR("---shengyu_da=%d----\n",shengyu_da);
+            // DB_PR("---shengyu_zhong=%d----\n",shengyu_zhong);
+            // DB_PR("---shengyu_xiao=%d----\n",shengyu_xiao);
+
+
+            // nvs_wr_shengyu_da(1);
+            // nvs_wr_shengyu_zhong(1);
+            // nvs_wr_shengyu_xiao(1);
+
+            // tongbu_gekou_shuliang_all(shengyu_all);//
+            // //vTaskDelay(10 / portTICK_PERIOD_MS);
+            // tongbu_gekou_shuliang_d(shengyu_da);
+            // //vTaskDelay(10 / portTICK_PERIOD_MS);
+            // tongbu_gekou_shuliang_z(shengyu_zhong);
+            // //vTaskDelay(10 / portTICK_PERIOD_MS);
+            // tongbu_gekou_shuliang_x(shengyu_xiao);
+            // //vTaskDelay(10 / portTICK_PERIOD_MS);
+
+
+            // tongbu_da();
+            // tongbu_zh();
+            // tongbu_changqi();
+            // tongbu_locked();   
+
         }
         else
         {
-            uart0_debug_data_h( (uint8_t*) zw_idx_table2, 32);
-            for(int i=32;i<64;i++)
-            {
-                for(int j=0;j<8;j++)
-                {
-                    zw_idx_table_global[i*8+j]=  zw_idx_table1[i] &(1<<j);  
-                    if(0!=zw_idx_table_global[i*8+j])
-                        DB_PR("----no valid used---idx = %03d, table=%d\r\n",i*8+j, zw_idx_table_global[i*8+j]);   
-                    else
-                        DB_PR("****yes valid used---idx = %03d, table=%d\r\n",i*8+j, zw_idx_table_global[i*8+j]);       
-                }
-
-            }  
+            /* pass -数据库对比成功的*/
         }
-        
     }
-
 
 
     // database_ad.zhiwen_page_id_adm
 
 
 
+
+
+    // if(1==Del_FR(database_cw.zhiwen_page_id))
+    // {
+    //     DB_PR("--zw del ok--.\r\n"); 
+    // }
+    // else
+    // {
+    //     DB_PR("--zw del err--.\r\n"); 
+    //     // continue;
+    // }
+    
+    // database_ad.zhiwen_page_id_adm[database_cw.zhiwen_page_id] =0;
+    // nvs_wr_adm_zwpageid_flag(1,database_cw.zhiwen_page_id);
+
+    // database_gz[database_cw.dIndx].zhiwen_page_id_gz =0;
+    // nvs_wr_zw_pageid_gz(1);
+
+
 }
-
-
 
 
 
@@ -13643,7 +13811,7 @@ void app_main(void)
 
 
     //---------------zhiwen-----------------
-    zhiwen_init();
+    zhiwen_init1();
 
 
 
@@ -13724,6 +13892,10 @@ void app_main(void)
 
     log_debug();//must be reserved
 
+
+
+    //---------------zhiwen-----------------
+    zhiwen_init2();
 
 
 
