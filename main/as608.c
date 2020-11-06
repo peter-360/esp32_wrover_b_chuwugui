@@ -526,6 +526,45 @@ u8 PS_SetAddr(u32 PS_addr)
 		DB_PR("\r\n%s",EnsureMessage(ensure));
 	return ensure;
 }
+
+
+//读记事PS_ReadIndexTable
+//功能：  读取FLASH用户区的32bytes数据
+//参数:  NotePageNum(0~3)
+//说明:  模块返回确认字+用户信息
+u8 PS_ReadIndexTable(u8 NotePageNum,u8 *Byte32)
+{
+	u16 temp;
+  u8  ensure,i;
+	u8  *data;
+	SendHead();
+	SendAddr();
+	SendFlag(0x01);//命令包标识
+	SendLength(0x04);
+	Sendcmd(0x1f);//0x19
+	MYUSART_SendData(NotePageNum);
+	temp = 0x01+0x04+0x1f+NotePageNum;
+	SendCheck(temp);
+
+	flag_rx2 =0;
+	DB_PR("-----0----flag_rx2=%u\r\n", flag_rx2);
+	delay_ms(50);//----------250-----------
+
+  data=JudgeStr(2000);
+	if(data)
+	{
+		ensure=data[9];
+		for(i=0;i<32;i++)
+		{
+			Byte32[i]=data[10+i];
+		}
+	}
+	else
+		ensure=0xff;
+	return ensure;
+}
+
+
 //功能： 模块内部为用户开辟了256bytes的FLASH空间用于存用户记事本,
 //	该记事本逻辑上被分成 16 个页。
 //参数:  NotePageNum(0~15),Byte32(要写入内容，32个字节)
@@ -785,7 +824,7 @@ const char *EnsureMessage(u8 ensure)
 		default :
 			p="模块返回确认码有误";break;
 	}
- return p;	
+ 	return p;	
 }
 
 

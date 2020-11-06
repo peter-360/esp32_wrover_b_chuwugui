@@ -3,7 +3,7 @@
 #include <stdio.h>
 //#include "stm32f4xx.h"  
 
-
+typedef uint64_t  u64;
 typedef uint32_t  u32;
 typedef uint16_t u16;
 typedef uint8_t  u8;
@@ -12,6 +12,9 @@ typedef uint8_t  u8;
 #define CharBuffer1 0x01
 #define CharBuffer2 0x02
 #define CharBuffer3 0x03
+
+#define ZW_TBL_IDX0 0
+#define ZW_TBL_IDX1 1
 
 extern u32 AS608Addr;//模块地址
 
@@ -57,6 +60,8 @@ u8 PS_SetAddr(u32 addr);  //设置模块地址
 u8 PS_WriteNotepad(u8 NotePageNum,u8 *content);//写记事本 
 
 u8 PS_ReadNotepad(u8 NotePageNum,u8 *note);//读记事 
+
+u8 PS_ReadIndexTable(u8 NotePageNum,u8 *Byte32);//读索引表,add
 
 u8 PS_HighSpeedSearch(u8 BufferID,u16 StartPage,u16 PageNum,SearchResult *p);//高速搜索 
   

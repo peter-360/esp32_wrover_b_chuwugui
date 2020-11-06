@@ -1072,21 +1072,21 @@ uint16_t CRC16(uint8_t *puchMsg, uint16_t usDataLen)
 //版权声明：本文为CSDN博主「lhsfly」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
 //原文链接：https://blog.csdn.net/lhsfly/java/article/details/84072316
 
-void uart0_debug_str(uint8_t* str,uint16_t len)
+void uart0_debug_str(uint8_t* str,uint16_t len)//str8
 {
     DB_PR("--1str---debug_str:");
     for(uint8_t i=0;i<len;i++)
         DB_PR("%c ",str[i]);
     DB_PR("\r\n");
 }
-void uart0_debug_data(uint8_t* data,uint16_t len)
+void uart0_debug_data_h(uint8_t* data,uint16_t len)//hex8
 {
     DB_PR("---2----debug_data:");
     for(int i=0;i<len;i++)
         DB_PR("%02x ",data[i]);
     DB_PR("\r\n");
 }
-void uart0_debug_data_d(uint8_t* data,uint16_t len)
+void uart0_debug_data_d(uint8_t* data,uint16_t len)//dec8
 {
     DB_PR("---3---debug_data:");
     for(int i=0;i<len;i++)
@@ -1094,8 +1094,9 @@ void uart0_debug_data_d(uint8_t* data,uint16_t len)
     DB_PR("\r\n");
 }
 
+
 //2字节
-void uart0_debug_data_dec(uint16_t* data,uint16_t len)//16
+void uart0_debug_data_dec(uint16_t* data,uint16_t len)//dec16
 {
     DB_PR("----4----debug_data:");
     for(int i=0;i<len;i++)
@@ -1313,7 +1314,7 @@ void send_cmd_to_lcd_bl_len(uint16_t opCode, uint8_t* buff_temp,uint16_t data_le
     DB_PR("---------debug1---------\r\n");
     uart_write_bytes(UART_NUM_LCD, (const char *) tx_Buffer, 3+ data_len);
     DB_PR("---------debug2---------\r\n");
-    uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
+    uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
 }
 
 //2个字节
@@ -1341,7 +1342,7 @@ void send_cmd_to_lcd_bl(uint16_t opCode, uint16_t temp)//变量
     tx_Buffer[9] = (crc16_temp>>8)&0xff;
     uart_write_bytes(UART_NUM_LCD, (const char *) tx_Buffer, TX1_LEN_BL);
 
-    uart0_debug_data(tx_Buffer, TX1_LEN_BL);
+    uart0_debug_data_h(tx_Buffer, TX1_LEN_BL);
 }
 
 
@@ -1418,7 +1419,7 @@ void send_cmd_to_lcd_pic(uint16_t temp)//图片
     
     uart_write_bytes(UART_NUM_LCD, (const char *) tx_Buffer, TX1_LEN);
 
-    uart0_debug_data(tx_Buffer, TX1_LEN);
+    uart0_debug_data_h(tx_Buffer, TX1_LEN);
 }
 
 
@@ -1440,7 +1441,7 @@ void send_cmd_to_lock(uint8_t board_addr, uint8_t lock_addr)//变量
     RS485_TX_EN();
 
     DB_PR("tx_Buffer2=");
-    uart0_debug_data(tx_Buffer2, 13);
+    uart0_debug_data_h(tx_Buffer2, 13);
     // uart_write_bytes(UART_NUM_LOCK, (const char *) tx_Buffer2, 13);
     uartlock_output(tx_Buffer2, 13);
     RS485_RX_EN();
@@ -1465,7 +1466,7 @@ void send_cmd_to_lock_all(uint8_t opcode, uint8_t board_addr)//变量
     RS485_TX_EN();
 
     DB_PR("tx_Buffer2=");
-    uart0_debug_data(tx_Buffer2, 11);
+    uart0_debug_data_h(tx_Buffer2, 11);
     // uart_write_bytes(UART_NUM_LOCK, (const char *) tx_Buffer2, 11);
     uartlock_output(tx_Buffer2, 11);
     RS485_RX_EN();
@@ -3176,7 +3177,7 @@ static void echo_task2()//lcd
                                 for (int i = 7; i < 7+ data_rx_t[6] *2 ; i++) {
                                     DB_PR("0x%.2X ", (uint8_t)data_rx_t[i]);
                                     tx_Buffer2[j]=data_rx_t[i];
-                                    // uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
+                                    // uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
                                     // if(tx_Buffer2[j] != 0x2D)
                                     j++;
                                 }
@@ -3409,7 +3410,7 @@ static void echo_task2()//lcd
                                 for (int i = 7; i < 7+ data_rx_t[6] *2 ; i++) {
                                     DB_PR("0x%.2X ", (uint8_t)data_rx_t[i]);
                                     tx_Buffer2[j]=data_rx_t[i];
-                                    // uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
+                                    // uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
                                     // if(tx_Buffer2[j] != 0x2D)
                                     j++;
                                 }
@@ -3672,7 +3673,7 @@ static void echo_task2()//lcd
                                 for (int i = 7; i < 7+ data_rx_t[6] *2 ; i++) {
                                     DB_PR("0x%.2X ", (uint8_t)data_rx_t[i]);
                                     tx_Buffer2[j]=data_rx_t[i];
-                                    // uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
+                                    // uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
                                     // if(tx_Buffer2[j] != 0x2D)
                                     j++;
                                 }
@@ -3935,7 +3936,7 @@ static void echo_task2()//lcd
                                 for (int i = 7; i < 7+ data_rx_t[6] *2 ; i++) {
                                     DB_PR("0x%.2X ", (uint8_t)data_rx_t[i]);
                                     tx_Buffer2[j]=data_rx_t[i];
-                                    // uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
+                                    // uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
                                     // if(tx_Buffer2[j] != 0x2D)
                                     j++;
                                 }
@@ -4186,7 +4187,7 @@ static void echo_task2()//lcd
                                 // for (int i = 7; i < 7+ data_rx_t[6] *2 ; i++) {
                                 //     DB_PR("0x%.2X ", (uint8_t)data_rx_t[i]);
                                 //     tx_Buffer2[j]=data_rx_t[i];
-                                //     // uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
+                                //     // uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
                                 //     // if(tx_Buffer2[j] != 0x2D)
                                 //     j++;
                                 // }
@@ -4214,7 +4215,7 @@ static void echo_task2()//lcd
                                 // for (int i = 7; i < 7+ data_rx_t[6] *2 ; i++) {
                                 //     DB_PR("0x%.2X ", (uint8_t)data_rx_t[i]);
                                 //     tx_Buffer2[j]=data_rx_t[i];
-                                //     // uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
+                                //     // uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
                                 //     // if(tx_Buffer2[j] != 0x2D)
                                 //     j++;
                                 // }
@@ -4383,7 +4384,7 @@ wuci_xmh:
                                 // for (int i = 7; i < 7+ data_rx_t[6] *2 ; i++) {
                                 //     DB_PR("0x%.2X ", (uint8_t)data_rx_t[i]);
                                 //     tx_Buffer2[j]=data_rx_t[i];
-                                //     // uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
+                                //     // uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
                                 //     // if(tx_Buffer2[j] != 0x2D)
                                 //     j++;
                                 // }
@@ -4602,7 +4603,7 @@ wuci_xmh_q:
                                 // for (int i = 7; i < 7+ data_rx_t[6] *2 ; i++) {
                                 //     DB_PR("0x%.2X ", (uint8_t)data_rx_t[i]);
                                 //     tx_Buffer2[j]=data_rx_t[i];
-                                //     // uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
+                                //     // uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
                                 //     // if(tx_Buffer2[j] != 0x2D)
                                 //     j++;
                                 // }
@@ -4658,7 +4659,7 @@ wuci_xmh_q:
                                 // for (int i = 7; i < 7+ data_rx_t[6] *2 ; i++) {
                                 //     DB_PR("0x%.2X ", (uint8_t)data_rx_t[i]);
                                 //     tx_Buffer2[j]=data_rx_t[i];
-                                //     // uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
+                                //     // uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
                                 //     // if(tx_Buffer2[j] != 0x2D)
                                 //     j++;
                                 // }
@@ -4715,7 +4716,7 @@ wuci_xmh_q:
                                 // for (int i = 7; i < 7+ data_rx_t[6] *2 ; i++) {
                                 //     DB_PR("0x%.2X ", (uint8_t)data_rx_t[i]);
                                 //     tx_Buffer2[j]=data_rx_t[i];
-                                //     // uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
+                                //     // uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
                                 //     // if(tx_Buffer2[j] != 0x2D)
                                 //     j++;
                                 // }
@@ -5130,7 +5131,7 @@ done_longtime_2:
                                 // for (int i = 7; i < 7+ data_rx_t[6] *2 ; i++) {
                                 //     DB_PR("0x%.2X ", (uint8_t)data_rx_t[i]);
                                 //     tx_Buffer2[j]=data_rx_t[i];
-                                //     // uart0_debug_data( (const char *) tx_Buffer, 3+ data_len);
+                                //     // uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
                                 //     // if(tx_Buffer2[j] != 0x2D)
                                 //     j++;
                                 // }
@@ -9698,6 +9699,10 @@ static void oneshot_timer_callback(void* arg)
     send_cmd_to_lcd_pic(ADMIN_LOGIN_PIC);
 }
 
+
+
+
+bool zw_idx_table_global[ZHIWEN_PAGE_ID_MAX];
 void zhiwen_init(void )
 {
     u8 ensure;
@@ -9762,6 +9767,89 @@ void zhiwen_init(void )
         DB_PR("2-ensure = %d\r\n",ensure);
         ShowErrMessage(ensure);	
     }
+
+
+    //EF 01 FF FF FF FF 07 00 23 0B 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 35 
+    //EF 01 FF FF FF FF 07 00 23 00 21 08 00 00 20 00 00 00 00 00 00 00 00 00 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 F3 
+
+
+    // u64 zw_idx_tb1=0;//4个64的
+    // ensure=PS_ReadIndexTable(ZW_TBL_IDX0,(uint8_t*)&zw_idx_tb1);//NotePageNum
+	// if(ensure!=0x00)
+    // {
+    //     DB_PR("3-ensure = %d\r\n",ensure);
+    //     ShowErrMessage(ensure);//显示确认码错误信息	
+    // }
+    // uart0_debug_data_h( (uint8_t*) &zw_idx_tb1, 32);
+
+    // DB_PR("zw_idx_tb1 = 0X%llx\r\n",zw_idx_tb1);
+    // //DB_PR("zw_idx_tb1= 0x%016I64x", zw_idx_tb1);
+
+    u8 zw_idx_table1[32]={0};
+    u8 zw_idx_table2[32]={0};
+
+    ensure=PS_ReadIndexTable(ZW_TBL_IDX0,zw_idx_table1);//NotePageNum
+	if(ensure!=0x00)
+    {
+        DB_PR("3-ensure = %d\r\n",ensure);
+        ShowErrMessage(ensure);//显示确认码错误信息	
+    }
+    else
+    {
+        
+        uart0_debug_data_h( (uint8_t*) zw_idx_table1, 32);
+        DB_PR("\r\n------0 - 255-----\r\n");
+        for(int i=0;i<32;i++)
+        {
+            for(int j=0;j<8;j++)
+            {
+                zw_idx_table_global[i*8+j]=  zw_idx_table1[i] &(1<<j);  
+                if(0!=zw_idx_table_global[i*8+j])
+                    DB_PR("no  valid used---idx = %03d, table=%d\r\n",i*8+j, zw_idx_table_global[i*8+j]);   
+                else
+                    DB_PR("yes valid used---idx = %03d, table=%d\r\n",i*8+j, zw_idx_table_global[i*8+j]);       
+            }
+
+        }
+        // uart0_debug_data_h( (uint8_t*) zw_idx_table_global, 256);
+    }
+
+
+
+
+
+    if((AS608Para.PS_max>256)&&(AS608Para.PS_max<=512))
+    {
+        DB_PR("\r\n------256 - 511-----\r\n");
+        ensure=PS_ReadIndexTable(ZW_TBL_IDX1,zw_idx_table2);//>256 300枚指纹
+        if(ensure!=0x00)
+        {
+            DB_PR("4-ensure = %d\r\n",ensure);
+            ShowErrMessage(ensure);//显示确认码错误信息	
+        }
+        else
+        {
+            uart0_debug_data_h( (uint8_t*) zw_idx_table2, 32);
+            for(int i=32;i<64;i++)
+            {
+                for(int j=0;j<8;j++)
+                {
+                    zw_idx_table_global[i*8+j]=  zw_idx_table1[i] &(1<<j);  
+                    if(0!=zw_idx_table_global[i*8+j])
+                        DB_PR("----no valid used---idx = %03d, table=%d\r\n",i*8+j, zw_idx_table_global[i*8+j]);   
+                    else
+                        DB_PR("****yes valid used---idx = %03d, table=%d\r\n",i*8+j, zw_idx_table_global[i*8+j]);       
+                }
+
+            }  
+        }
+        
+    }
+
+
+
+    // database_ad.zhiwen_page_id_adm
+
 
 
 }
