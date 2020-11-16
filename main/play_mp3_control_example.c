@@ -7757,15 +7757,15 @@ void Add_FR()
                     //database_cw.zhiwen_page_id = 0x0c;//todo
                     //ensure=PS_StoreChar(CharBuffer3,database_cw.zhiwen_page_id);//储存模板
                     ensure=PS_StoreChar(CharBuffer1,database_cw.zhiwen_page_id);//储存模板
-                    DB_PR("----4------ensure=%d",ensure);
+                    DB_PR("----4------ensure=%d\n",ensure);
                     if(ensure==0x00) 
                     {			
                         //LCD_Fill(0,100,lcddev.width,160,WHITE);					
-                        DB_PR("--4-ok录入指纹成功 ");
+                        DB_PR("--4-ok录入指纹成功 \n");
                         // PS_ReadSysPara(&AS608Para);  //读参数 
                         PS_ValidTempleteNum(&ValidN);//读库指纹个数
-                        DB_PR("AS608Para.PS_max=%d, ValidN =%d ",AS608Para.PS_max, ValidN);
-                        DB_PR("zhiwen shengyu number=%d ",AS608Para.PS_max-ValidN);
+                        DB_PR("AS608Para.PS_max=%d, ValidN =%d \n",AS608Para.PS_max, ValidN);
+                        DB_PR("zhiwen shengyu number=%d \n",AS608Para.PS_max-ValidN);
                         delay_ms(150);//1500
 
 
@@ -9874,7 +9874,7 @@ void zhiwen_init1(void )
 			// mymemset(str,0,50);
 			// sprintf(str,"库容量:%d     对比等级: %d",AS608Para.PS_max-ValidN,AS608Para.PS_level);
 			// Show_Str(0,80,240,16,(u8*)str,16,0);
-        DB_PR("3-AS608Para.PS_max=%d, ValidN =%d \n",AS608Para.PS_max, ValidN);
+        DB_PR("3-AS608Para.PS_max=%d, ValidN =%d \r\n",AS608Para.PS_max, ValidN);
         DB_PR("3-库容量:%d     对比等级: %d\n",AS608Para.PS_max-ValidN,AS608Para.PS_level);
         if(0==AS608Para.PS_max)
         {
@@ -10190,7 +10190,7 @@ void re_smartconfig_wifi(void)
 
 
         // ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL) );
-        xTaskCreate((TaskFunction_t)smartconfig_example_task, "smartconfig_example_task", 4096, NULL, 3, NULL);
+        xTaskCreate((TaskFunction_t)smartconfig_example_task, "smartconfig_example_task", 1024*8, NULL, 3, NULL);//4096
     }
 
 }
@@ -13282,7 +13282,7 @@ u16 cjson_to_struct_info(char *update_ip_ret,char *update_audio_ip_ret,char *tex
     if(update_ip_ret == NULL  || update_audio_ip_ret ==NULL || text == NULL)
     {
         DB_PR("\n----1 err----text=\n%s\n",text);
-        return 0;
+        return 0xffff;
     }
     // cJSON *root,*psub;
 
@@ -13296,7 +13296,7 @@ u16 cjson_to_struct_info(char *update_ip_ret,char *update_audio_ip_ret,char *tex
     if(NULL == index)
     {
         DB_PR("------NULL----4444----------\n");
-        return 0;
+        return 0xffff;
     }
     strcpy(text,index);
 
@@ -13653,7 +13653,8 @@ void flash_tone_ota_example_task(void *pvParameter)
                 NULL,
                 false,
                 false
-            }//,
+            }
+            //,
             // {
             //     {
             //         ESP_PARTITION_TYPE_APP,
@@ -13698,10 +13699,16 @@ void flash_tone_ota_example_task(void *pvParameter)
         vEventGroupDelete(s_wifi_event_group);
 
     }
-    else
+    else if(update_sta == 0)
     {
         send_cmd_to_lcd_pic(0x0056);//version cant be updated
         DB_PR( "--------http ota reject-------------\n\n");
+        // vTaskDelete(NULL);
+    }
+    else if(update_sta == 0xffff)
+    {
+        send_cmd_to_lcd_pic(0x0054);//version cant be updated
+        DB_PR( "--------http network fail-------------\n\n");
         // vTaskDelete(NULL);
     }
     vTaskDelete(NULL);
