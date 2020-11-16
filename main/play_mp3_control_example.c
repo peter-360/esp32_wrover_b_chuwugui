@@ -117,6 +117,7 @@ void tongbu_changqi(void);
 void tongbu_locked(void);
 void audio_init(void);
 void close_mp3(void);
+u16 cjson_to_struct_info_tcp_rcv(char *text,int sock);
 
 
 
@@ -124,7 +125,7 @@ void close_mp3(void);
 
 
 
-#define HOST_IP_ADDR "cabinet.dev.modoubox.com"
+// #define HOST_IP_ADDR "cabinet.dev.modoubox.com"
 // #define HOST_IP_ADDR "47.94.2.173"
 #define HOST_IP_ADDR "192.168.10.111"
 
@@ -165,7 +166,8 @@ u8 audio_play_mp3_over;
 
 
 void audio_play_my_mp3(void);
-void audio_play_one_mp3(int num);
+// void audio_play_one_mp3(int num);
+void audio_play_one_mp3(void *pvParameters);
 void simple_ota_example_task(void *pvParameter);
 void flash_tone_ota_example_task(void *pvParameter);
 static void event_handler(void* arg, esp_event_base_t event_base, 
@@ -1001,10 +1003,10 @@ void delay_ms(u16 nms)
 
 
 
-static void RS485_delay(u32 nCount)
-{
-	for(; nCount != 0; nCount--);
-} 
+// static void RS485_delay(u32 nCount)
+// {
+// 	for(; nCount != 0; nCount--);
+// } 
 
 /*??????·?????*/
 //????????????,±??????????±????485???í?ê????
@@ -1314,7 +1316,7 @@ void send_cmd_to_lcd_bl_len(uint16_t opCode, uint8_t* buff_temp,uint16_t data_le
     DB_PR("---------debug1---------\r\n");
     uart_write_bytes(UART_NUM_LCD, (const char *) tx_Buffer, 3+ data_len);
     DB_PR("---------debug2---------\r\n");
-    uart0_debug_data_h( (const char *) tx_Buffer, 3+ data_len);
+    uart0_debug_data_h( tx_Buffer, 3+ data_len);
 }
 
 //2个字节
@@ -1696,7 +1698,7 @@ void nvs_wr_zw_pageid_gz(uint8_t mode)//1 write; 0 read
 
 void nvs_wr_shengyu_da(uint8_t mode)
 {
-    char key_name[15];//15
+    // char key_name[15];//15
     esp_err_t err;
     if(mode == 1)
     {
@@ -1715,7 +1717,7 @@ void nvs_wr_shengyu_da(uint8_t mode)
 
 void nvs_wr_shengyu_zhong(uint8_t mode)
 {
-    char key_name[15];//15
+    // char key_name[15];//15
     esp_err_t err;
     if(mode == 1)
     {
@@ -1735,7 +1737,7 @@ void nvs_wr_shengyu_zhong(uint8_t mode)
 
 void nvs_wr_shengyu_xiao(uint8_t mode)//->all
 {
-    char key_name[15];//15
+    // char key_name[15];//15
     esp_err_t err;
     if(mode == 1)
     {
@@ -1753,7 +1755,7 @@ void nvs_wr_shengyu_xiao(uint8_t mode)//->all
 
 void nvs_wr_mima_number_adm(uint8_t mode)
 {
-    char key_name[15];//15
+    // char key_name[15];//15
     esp_err_t err;
 
     if(mode == 1)
@@ -1772,7 +1774,7 @@ void nvs_wr_mima_number_adm(uint8_t mode)
 //--------------------------duoyu------------------------------
 void nvs_wr_shengyu_all_max(uint8_t mode)//->all
 {
-    char key_name[15];//15
+    // char key_name[15];//15
     esp_err_t err;
     if(mode == 1)
     {
@@ -1789,7 +1791,7 @@ void nvs_wr_shengyu_all_max(uint8_t mode)//->all
 
 void nvs_wr_shengyu_da_max(uint8_t mode)//->all
 {
-    char key_name[15];//15
+    // char key_name[15];//15
     esp_err_t err;
     if(mode == 1)
     {
@@ -1805,7 +1807,7 @@ void nvs_wr_shengyu_da_max(uint8_t mode)//->all
 
 void nvs_wr_shengyu_zhong_max(uint8_t mode)//->all
 {
-    char key_name[15];//15
+    // char key_name[15];//15
     esp_err_t err;
     if(mode == 1)
     {
@@ -1822,7 +1824,7 @@ void nvs_wr_shengyu_zhong_max(uint8_t mode)//->all
 //-----duoyu---no----
 void nvs_wr_shengyu_xiao_max(uint8_t mode)//->all
 {
-    char key_name[15];//15
+    // char key_name[15];//15
     esp_err_t err;
     if(mode == 1)
     {
@@ -1857,7 +1859,7 @@ void nvs_wr_adm_zwpageid_flag(uint8_t mode,uint16_t zhiwen_page_id_temp)//->all
 //
 void nvs_wr_mp3_ctl(uint8_t mode)//->all
 {
-    char key_name[15];//15
+    // char key_name[15];//15
     esp_err_t err;
     if(mode == 1)
     {
@@ -1867,7 +1869,7 @@ void nvs_wr_mp3_ctl(uint8_t mode)//->all
         err = save_u8_value(STORAGE_NAMESPACE_ADM,ADM_KEY_MP3_CTL,audio_play_mp3_stop);
         if (err != ESP_OK) DB_PR("Error (%s) write data from NVS!\n", esp_err_to_name(err));
     }
-    err = read_u8_value(STORAGE_NAMESPACE_ADM,ADM_KEY_MP3_CTL, (uint16_t*)(&audio_play_mp3_stop));
+    err = read_u8_value(STORAGE_NAMESPACE_ADM,ADM_KEY_MP3_CTL, (uint8_t*)(&audio_play_mp3_stop));
     if (err != ESP_OK) DB_PR("Error (%s) reading data from NVS!\n", esp_err_to_name(err));
 }
 
@@ -2428,7 +2430,7 @@ uint8_t return_cause_zw_handshake_fail;
 
 u8 guimenset(uint16_t shengyu_all_max_temp,int16_t* guimen_x_gk_max_temp)
 {
-    int i = 0;
+    // int i = 0;
     int j = 0;
     for(j = hang_shu_max; j < BOARD_GK_MAX; j++)//i 个柜子 =
     {
@@ -2462,7 +2464,7 @@ u8 guimenset(uint16_t shengyu_all_max_temp,int16_t* guimen_x_gk_max_temp)
     if((shengyu_all_max_temp>0)
         &&(shengyu_all_max_temp<=SHENYU_GEZI_MAX))
     {
-        // xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A011_GMSET_ONGO, 10, (TaskHandle_t* )&taskhandle_mp3);
+        // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A011_GMSET_ONGO, 10, (TaskHandle_t* )&taskhandle_mp3);
         DB_PR("2-------shengyu_all_max_temp=%03d\r\n",shengyu_all_max_temp);
         shengyu_all_max = shengyu_all_max_temp;
 
@@ -2471,11 +2473,11 @@ u8 guimenset(uint16_t shengyu_all_max_temp,int16_t* guimen_x_gk_max_temp)
         memcpy(guimen_x_gk_max,guimen_x_gk_max_temp,BOARD_GK_MAX);//????????
 
         // DB_PR("2-hang_shu_max=%03d\r\n",hang_shu_max);
-        uart0_debug_data_d(guimen_x_gk_max,BOARD_GK_MAX);
+        uart0_debug_data_dec((u16*)guimen_x_gk_max,BOARD_GK_MAX);
 
 
         DB_PR("3-hang_shu_max=%03d\r\n",hang_shu_max);
-        uart0_debug_data_d(guimen_x_gk_max_temp,BOARD_GK_MAX);
+        uart0_debug_data_dec((u16*)guimen_x_gk_max_temp,BOARD_GK_MAX);
 
 
 
@@ -2489,7 +2491,7 @@ u8 guimenset(uint16_t shengyu_all_max_temp,int16_t* guimen_x_gk_max_temp)
         // u8 buff_temp2_c[400]={0};//150
         uint16_t id=0,iz=0,ix=0;
         uint16_t id_max=0,iz_max=0,ix_max=0;
-        uint16_t changqi_num_temp=0;
+        // uint16_t changqi_num_temp=0;
         j=0;
 
 
@@ -2814,7 +2816,11 @@ u8 lock_in_exec(int32_t guimen_gk_temp)
     nvs_wr_glock_gz(1);
 
 
-    xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8192, (void*)TONE_TYPE_A007_SUODING, 10, NULL);
+    // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8192, (void*)TONE_TYPE_A007_SUODING, 10, NULL);
+    int tone_numx=TONE_TYPE_A007_SUODING;
+    xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+
+
 
     //if(database_gz[database_cw.dIndx].changqi == 1)
     {
@@ -2926,11 +2932,10 @@ u8 unlockin_exec(int32_t guimen_gk_temp)
     }
     DB_PR("-2-database_gz[database_cw.dIndx].changqi=%d\r\n",database_gz[database_cw.dIndx].changqi);
 
-
-
     
-
-    xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8192, (void*)TONE_TYPE_A008_JIESUO, 10, NULL);
+    // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8192, (void*)TONE_TYPE_A008_JIESUO, 10, NULL);
+    int tone_numx=TONE_TYPE_A008_JIESUO;
+    xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
     
     tongbu_changqi();
     tongbu_locked();   
@@ -2972,7 +2977,12 @@ u8 clear_changqi(int guimen_gk_temp)
     send_cmd_to_lcd_bl(0x1120,database_gz[database_cw.dIndx].dIndx_gz);
 
     DB_PR("-----2-----[ * ] Starting audio pipeline");
-    xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+    // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+    int tone_numx=TONE_TYPE_A005_OPEN;
+    xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+
+    
+    
     //send_cmd_to_lcd_pic(0x0024);
     send_cmd_to_lcd_pic(UN_CHANGQI_OK_PIC);
 
@@ -3162,8 +3172,8 @@ static void echo_task2()//lcd
 
                             //uint8_t tx_Buffer[50]={0};  
                             uint8_t tx_Buffer2[200]={0};  
-                            uint8_t Buffer2_ok[200]={0};  
-                            uint8_t bcc_temp=0;
+                            // uint8_t Buffer2_ok[200]={0};  
+                            // uint8_t bcc_temp=0;
                             switch (bl_addr)
                             {
 
@@ -3486,7 +3496,7 @@ static void echo_task2()//lcd
                                         break;
                                     }
 
-                                    bool over_flag=0;//<=0 or>shengyu_all_max
+                                    // bool over_flag=0;//<=0 or>shengyu_all_max
                                     DB_PR("hang_shu_max=%03d\r\n",hang_shu_max);
                                     if((hang_shu_max<= 0x96))//
                                     {
@@ -4196,10 +4206,10 @@ static void echo_task2()//lcd
                                 // DB_PR("shengyu_all_max= %3d\r\n", shengyu_all_max);
                                 // guimen_gk_temp = shengyu_all_max ;
                                 // j=0;
-                                uint16_t k=0;
+                                // uint16_t k=0;
 
 
-                                xTaskCreate(lock_all_open_task, "lk_all_open_task", 2* 1024, NULL, 2, NULL);//1024 10
+                                xTaskCreate((TaskFunction_t)lock_all_open_task, "lk_all_open_task", 2* 1024, NULL, 2, NULL);//1024 10
 
                                 //send_cmd_to_lcd_pic(KAIJI_PIC);
                                 break;
@@ -4226,7 +4236,7 @@ static void echo_task2()//lcd
                                 // j=0;
                                 //uint16_t k=0;
 
-                                xTaskCreate(lock_all_clear_task, "lk_all_clear_open_task", 4* 1024, NULL, 2, NULL);//1024 10
+                                xTaskCreate((TaskFunction_t)lock_all_clear_task, "lk_all_clear_open_task", 4* 1024, NULL, 2, NULL);//1024 10
 
                                 //send_cmd_to_lcd_pic(KAIJI_PIC);
                                 break;
@@ -4287,7 +4297,7 @@ static void echo_task2()//lcd
                                 u8 buff_temp1_c[32]={0};
                                 memset(temp_xiangmen,0,4);
                                 j=0;
-                                k=0;//k:board  j:lock
+                                // uint16_t k=0;//k:board  j:lock
                                 //uint8_t temp_xiangmen_uint=0; //16
                                 memcpy(temp_xiangmen,data_rx_t+7,3);//len todo 
                                 if(02== data_rx_t[6])//-------------------------
@@ -4360,7 +4370,9 @@ static void echo_task2()//lcd
                                         DB_PR("----222222 =NULL-----.\r\n");
                                     }
                                     
-                                    xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, (TaskHandle_t* )&taskhandle_mp3);
+                                    // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, (TaskHandle_t* )&taskhandle_mp3);
+                                    int tone_numx=TONE_TYPE_A005_OPEN;
+                                    xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
 
 
                                 }
@@ -4391,14 +4403,14 @@ wuci_xmh:
                                 // DB_PR("\r\n");
 
 
-                                //xTaskCreate(lock_all_open_task, "lk_all_open_task", 2* 1024, NULL, 2, NULL);//1024 10
+                                //xTaskCreate((TaskFunction_t)lock_all_open_task, "lk_all_open_task", 2* 1024, NULL, 2, NULL);//1024 10
                                 
                                 
 
                                 memset(temp_xiangmen,0,4);
                                 j=0;
-                                k=0;//k:board  j:lock
-                                bool lock_flag =0;
+                                // k=0;//k:board  j:lock
+                                // bool lock_flag =0;
                                 //uint8_t temp_xiangmen_uint=0; //16
                                 memcpy(temp_xiangmen,data_rx_t+7,3);//len todo 
                                 if((02== data_rx_t[6])||(03== data_rx_t[6]))//-------------------------
@@ -4538,7 +4550,11 @@ wuci_xmh:
                                         {
                                             DB_PR("----222222 =NULL-----.\r\n");
                                         }
-                                        xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                                        // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                                        int tone_numx=TONE_TYPE_A005_OPEN;
+                                        xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+
+                                        
                                         //update xianshi todo
                                         tongbu_changqi();
                                         //tongbu_locked();    
@@ -4612,7 +4628,7 @@ wuci_xmh_q:
                                 //uint8_t temp_xiangmen[4]={0}; 
                                 memset(temp_xiangmen,0,4);
                                 j=0;
-                                k=0;//k:board  j:lock
+                                u16 k=0;//k:board  j:lock
                                 //uint8_t temp_xiangmen_uint=0; //16
                                 memcpy(temp_xiangmen,data_rx_t+7,3);//len todo 
                                 if((02== data_rx_t[6])||(03== data_rx_t[6]))//-------------------------
@@ -4839,7 +4855,7 @@ wuci_xmh_xinz:
                                     //baocun 1
                                     database_cw_adm.cunwu_mode = 1;
 									send_cmd_to_lcd_pic(0x0004);//0x001b
-                                    xTaskCreate(Add_FR_First, "add_zhiwen_task", 8* 1024, NULL, 2, NULL);//1024 10
+                                    xTaskCreate((TaskFunction_t)Add_FR_First, "add_zhiwen_task", 8* 1024, NULL, 2, NULL);//1024 10
                                 }
                                 else if(02== data_rx_t[8])//mi ma
                                 {
@@ -5076,7 +5092,11 @@ wuci_xmh_xinz:
                                     }
 
                                     DB_PR("-----2-----[ * ] Starting audio pipeline");
-                                    xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                                    // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                                    int tone_numx=TONE_TYPE_A005_OPEN;
+                                    xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+
+                                    
                                     //if(database_gz[database_cw_adm.dIndx].changqi == 0)
                                     {
                                         //update xianshi todo
@@ -5292,7 +5312,7 @@ done_longtime_2:
                                     // DB_PR("\r\n");
 
 
-                                    uint16_t j=0,k=0;
+                                    // uint16_t j=0,k=0;
                                     uint32_t mima_number_adm_temp1;  //
                                     uint32_t mima_number_adm_temp2;  //
    
@@ -5367,7 +5387,7 @@ done_mima_nosame:
                                     audio_play_mp3_stop =1;
                                     send_cmd_to_lcd_pic(MUSIC_OFF_PIC);//default
                                     //close_mp3();
-                                    //xTaskCreate(audio_init, "audio_init1", 2048, (void*)TONE_TYPE_A005_OPEN, 10, NULL);   
+                                    //xTaskCreate((TaskFunction_t)audio_init, "audio_init1", 2048, (void*)TONE_TYPE_A005_OPEN, 10, NULL);   
                                 }
                                 if(01== data_rx_t[8])
                                 {
@@ -5375,7 +5395,7 @@ done_mima_nosame:
                                     DB_PR("-------yuyin on------------.\r\n");
                                     send_cmd_to_lcd_pic(MUSIC_ON_PIC);
                                     //esp_restart();
-                                    //xTaskCreate(audio_init, "audio_init2", 2048, NULL, 3, NULL);   
+                                    //xTaskCreate((TaskFunction_t)audio_init, "audio_init2", 2048, NULL, 3, NULL);   
 
                                 }
                                 nvs_wr_mp3_ctl(1);
@@ -5611,7 +5631,7 @@ done_mima_nosame:
                                 DB_PR("---firmware shengji request---.\r\n");   
                                 if(1==wifi_connected_flag)
                                 {
-                                    xTaskCreate(&flash_tone_ota_example_task, "flash_tone_ota_example_task", 8192, NULL, 5, NULL);//8192
+                                    xTaskCreate((TaskFunction_t)flash_tone_ota_example_task, "flash_tone_ota_example_task", 8192, NULL, 5, NULL);//8192
                                 }
                                 else
                                 {
@@ -5694,7 +5714,7 @@ done_mima_nosame:
                                         DB_PR("--2 zhiwen--.\r\n");  
                                         //baocun 1
                                         send_cmd_to_lcd_pic(0x0004);
-                                        xTaskCreate(Add_FR_First, "add_zhiwen_task1", 8* 1024, NULL, 2, &taskhandle1);//1024 10
+                                        xTaskCreate((TaskFunction_t)Add_FR_First, "add_zhiwen_task1", 8* 1024, NULL, 2, &taskhandle1);//1024 10
                                     }
                                     else if(02== data_rx_t[8])//mi ma
                                     {
@@ -5787,7 +5807,7 @@ done_mima_nosame:
                                     else if(01 == database_cw.cunwu_mode)//2010 指纹 ->指纹判断 0005 todo
                                     {
                                         send_cmd_to_lcd_pic(0x0004);
-                                        xTaskCreate(Add_FR_First, "add_zhiwen_task1", 8* 1024, NULL, 2, &taskhandle1);//1024 10
+                                        xTaskCreate((TaskFunction_t)Add_FR_First, "add_zhiwen_task1", 8* 1024, NULL, 2, &taskhandle1);//1024 10
                                     } 
                                 }
                                 else
@@ -6165,7 +6185,9 @@ done_mima_nosame:
                                     }
 
                                     DB_PR("-----2-----[ * ] Starting audio pipeline");
-                                    xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                                    // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                                    int tone_numx=TONE_TYPE_A005_OPEN;
+                                    xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
 
                                     DB_PR("----test--.\r\n");  
                                     if(0 != database_cw.dzx_mode)
@@ -6320,7 +6342,7 @@ done_2:
                                     database_cw.cunwu_mode = 1;
                                     send_cmd_to_lcd_pic(0x000c);   
 
-                                    xTaskCreate(press_FR, "shua_zhiwen_task", 6* 1024, NULL, 2, NULL);//1024 10  
+                                    xTaskCreate((TaskFunction_t)press_FR, "shua_zhiwen_task", 6* 1024, NULL, 2, NULL);//1024 10  
                                 }
                                 send_cmd_to_lcd_bl_len(0x1080,(uint8_t*)buff_t,30+5);//phone
                                 send_cmd_to_lcd_bl_len(0x1090,(uint8_t*)buff_t,30+5);//key
@@ -6460,10 +6482,9 @@ done_2:
                                         send_cmd_to_lcd_bl(0x10a0,database_gz[database_cw.dIndx].dIndx_gz);//weishu bugou
                 
                                         DB_PR("-----2-----[ * ] Starting audio pipeline\r\n");
-                                        xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);   
-
-
-
+                                        // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);   
+                                        int tone_numx=TONE_TYPE_A005_OPEN;
+                                        xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
 
 
                                         if((database_gz[database_cw.dIndx].lock == 0)
@@ -7018,25 +7039,25 @@ static void lock_all_clear_task()
     vTaskDelete(NULL);
 }
 
-static void echo_task0()//zhiwen
-{
-    DB_PR("--echo_task0-- \n");
+// static void echo_task0()//zhiwen
+// {
+//     DB_PR("--echo_task0-- \n");
 
 
-    // vTaskDelay(1);
-    vTaskDelay(10 / portTICK_PERIOD_MS);
-    vTaskDelete(NULL);
-}
+//     // vTaskDelay(1);
+//     vTaskDelay(10 / portTICK_PERIOD_MS);
+//     vTaskDelete(NULL);
+// }
 
-static void echo_task3()//zhiwen
-{
-    DB_PR("--echo_task3-- \n");
+// static void echo_task3()//zhiwen
+// {
+//     DB_PR("--echo_task3-- \n");
 
 
-    // vTaskDelay(1);
-    vTaskDelay(10 / portTICK_PERIOD_MS);
-    vTaskDelete(NULL);
-}
+//     // vTaskDelay(1);
+//     vTaskDelay(10 / portTICK_PERIOD_MS);
+//     vTaskDelete(NULL);
+// }
 
 static void echo_task()
 {
@@ -7082,7 +7103,7 @@ static void echo_task()
             //     DB_PR("--uart2--222222 =NULL-----.\r\n");
             // }
             
-            // xTaskCreate(echo_task3, "uart_echo_task3",2* 1024, NULL, 2, &taskhandle_uart2);//uart2
+            // xTaskCreate((TaskFunction_t)echo_task3, "uart_echo_task3",2* 1024, NULL, 2, &taskhandle_uart2);//uart2
             //uart_write_bytes(UART_NUM_2, (const char *) data_rx2_m, len_rx2_m);
         }
 
@@ -7101,7 +7122,7 @@ static void echo_task()
                 //     //spear_sched_set_evt(NULL, 0,user_cmd_process_event_handle);
 
                 //     DB_PR("处理数据2-start\r\n");
-                //     xTaskCreate(echo_task2, "uart_echo_task2",4* 1024, NULL, 2, NULL);
+                //     xTaskCreate((TaskFunction_t)echo_task2, "uart_echo_task2",4* 1024, NULL, 2, NULL);
                 // }
             }
             DB_PR("] \n");
@@ -7109,7 +7130,7 @@ static void echo_task()
             //vTaskDelay(2 / portTICK_PERIOD_MS);
 
 
-            xTaskCreate(echo_task2, "uart_echo_task2",6* 1024, NULL, 2, NULL);//uart1
+            xTaskCreate((TaskFunction_t)echo_task2, "uart_echo_task2",6* 1024, NULL, 2, NULL);//uart1
 
         }
 	
@@ -7159,7 +7180,7 @@ static void echo_task()
 
 
             //vTaskDelay(2 / portTICK_PERIOD_MS);
-            // xTaskCreate(echo_task0, "uart_echo_task0",2* 1024, NULL, 2, NULL);//uart1
+            // xTaskCreate((TaskFunction_t)echo_task0, "uart_echo_task0",2* 1024, NULL, 2, NULL);//uart1
             // uart_write_bytes(UART_NUM_DUBUG, (const char *) data_rx0, len_rx0);//debug todo---------
 
         }
@@ -7395,14 +7416,16 @@ void Add_FR_First()
                             DB_PR("database_cw_adm.changqi_tmp= %d \r\n",database_cw_adm.changqi_tmp);
                             if(database_cw_adm.changqi_tmp == 0)
                             {
-                                xTaskCreate(Add_FR, "add_zhiwen_task2", 6* 1024, NULL, 2, NULL);//1024 10
+                                xTaskCreate((TaskFunction_t)Add_FR, "add_zhiwen_task2", 6* 1024, NULL, 2, NULL);//1024 10
                             }
                             else
                             {
-                                xTaskCreate(Add_FR_CQ, "add_zhiwen_task2", 6* 1024, NULL, 2, NULL);//1024 10
+                                xTaskCreate((TaskFunction_t)Add_FR_CQ, "add_zhiwen_task2", 6* 1024, NULL, 2, NULL);//1024 10
                             }
-                            xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A006_MOVE_FINGER, 10, NULL);
-                            
+                            // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A006_MOVE_FINGER, 10, NULL);
+                            int tone_numx=TONE_TYPE_A006_MOVE_FINGER;
+                            xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+
                             vTaskDelete(NULL);
 
 
@@ -7969,7 +7992,9 @@ void Add_FR()
                         }
 
                         DB_PR("-----2-----[ * ] Starting audio pipeline");
-                        xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                        // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                        int tone_numx=TONE_TYPE_A005_OPEN;
+                        xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
 
                         DB_PR("--11111111111--test--.\r\n");  
                         if(0 != database_cw.dzx_mode)
@@ -8420,7 +8445,9 @@ void Add_FR_CQ()
 
                         
                         DB_PR("-----2-----[ * ] Starting audio pipeline");
-                        xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                        // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                        int tone_numx=TONE_TYPE_A005_OPEN;
+                        xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
 
                         DB_PR( "database_gz[database_cw_adm.dIndx].state_gz = %d", database_gz[database_cw_adm.dIndx].state_gz);
                         if(0 == database_gz[database_cw_adm.dIndx].state_gz)
@@ -8804,7 +8831,9 @@ void del_zw_database(u16 num)
 
 
             DB_PR("-----2-----[ * ] Starting audio pipeline");
-            xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+            // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+            int tone_numx=TONE_TYPE_A005_OPEN;
+            xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
 
 
 
@@ -9101,8 +9130,9 @@ void uart_init_all(void)
 #define PLAYBACK_CHANNEL    1
 #define PLAYBACK_BITS       16
 
-void audio_play_one_mp3(int num)
+void audio_play_one_mp3(void *pvParameters)
 {
+    int num = *((int*)pvParameters);
     audio_play_mp3_task =1;
     DB_PR("\r\n22---mp3 num=%d----\r\n",num);
     DB_PR("\r\n22---mp3 audio_play_mp3_stop=%d----\r\n",audio_play_mp3_stop);
@@ -9299,7 +9329,7 @@ void audio_init(void)
     }
     DB_PR("[ 4 ] Listen for all pipeline events\r\n");
 
-    int j=0;
+    // int j=0;
     while (1) {
         // j++;
         // // DB_PR("-------- heart1---------\r\n");
@@ -9433,10 +9463,10 @@ void close_mp3(void)
 
 void read_nvs_guizi_all()
 {
-    char key_num[3];//65536
+    // char key_num[3];//65536
     //todo
-    char key_name[15];
-    esp_err_t err;
+    // char key_name[15];
+    // esp_err_t err;
     uint16_t page_id_temp1[ZHIWEN_PAGE_ID_MAX]={0};
     uint16_t page_id_temp2[ZHIWEN_PAGE_ID_MAX]={0};
 
@@ -9454,7 +9484,7 @@ void read_nvs_guizi_all()
 
 
     uint16_t j =0, k=0;
-    int rand_temp=0;
+    // int rand_temp=0;
     for(uint16_t i=0;i<AS608Para.PS_max;i++)
     {
         if(database_ad.zhiwen_page_id_adm[i] ==0)//weiyong
@@ -9591,7 +9621,7 @@ void log_debug(void)
 
     bzero(guimen_x_gk_max,BOARD_GK_MAX);
 
-    uint16_t j=0,k=0,l=0;
+    uint16_t j=0,k=0;
     for(uint16_t i=1;i<=SHENYU_GEZI_MAX;i++)
     {
 
@@ -9650,7 +9680,7 @@ void log_release(void)
     DB_PR2("2-AS608Para.PS_max=%d, ValidN =%d\n",AS608Para.PS_max, ValidN);
     DB_PR2("库容量:%d, 对比等级: %d\n",AS608Para.PS_max-ValidN,AS608Para.PS_level);
 
-    uint16_t j=0,k=0,l=0;
+    uint16_t j=0,k=0;
     for(uint16_t i=1;i<=SHENYU_GEZI_MAX;i++)
     {
 
@@ -9789,8 +9819,7 @@ void zw_suoyin_biao(void )
         }
         
     }
-
-
+    DB_PR("-------------------\r\n");
 }
 
 void zhiwen_init1(void )
@@ -9865,7 +9894,7 @@ void zhiwen_init1(void )
 
 void zhiwen_init2(void )
 {
-    uint16_t id=0,iz=0,ix=0;
+    // uint16_t id=0,iz=0,ix=0;
     zw_suoyin_biao();
 
 
@@ -10161,7 +10190,7 @@ void re_smartconfig_wifi(void)
 
 
         // ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL) );
-        xTaskCreate(smartconfig_example_task, "smartconfig_example_task", 4096, NULL, 3, NULL);
+        xTaskCreate((TaskFunction_t)smartconfig_example_task, "smartconfig_example_task", 4096, NULL, 3, NULL);
     }
 
 }
@@ -10173,7 +10202,7 @@ static void gpio_task_system(void* arg)
     // uint32_t io_num;
     uint32_t tick_times=0;
     bool led_green_state=0;
-    bool led_blue_state=0;
+    // bool led_blue_state=0;
     for(;;) 
     {
         
@@ -10219,7 +10248,7 @@ static void gpio_task_system(void* arg)
         {
             time_t rawtime;
             struct tm* timeinfo;
-            char timE[80];
+            // char timE[80];
 
             time(&rawtime);
             int64_t timer_tm = esp_timer_get_time();
@@ -10245,7 +10274,7 @@ static void gpio_task_example_wifi(void* arg)
 {
     // uint32_t io_num;
     uint32_t tick_times=0;
-    bool led_green_state=0;
+    // bool led_green_state=0;
     bool led_blue_state=0;
     for(;;) 
     {
@@ -10620,7 +10649,7 @@ static char * makeJson_cx_lock_one_attribute()
 
     cJSON *pJsonRoot = NULL;
     cJSON *pSubJson = NULL;
-    cJSON *dataArray = cJSON_CreateArray();
+    // cJSON *dataArray = cJSON_CreateArray();
     char *p = NULL;
 
     pJsonRoot = cJSON_CreateObject();
@@ -10668,7 +10697,7 @@ static char * makeJson_cx_xm_one_attribute()
 
     cJSON *pJsonRoot = NULL;
     cJSON *pSubJson = NULL;
-    cJSON *dataArray = cJSON_CreateArray();
+    // cJSON *dataArray = cJSON_CreateArray();
     char *p = NULL;
 
     pJsonRoot = cJSON_CreateObject();
@@ -10830,8 +10859,9 @@ static char * makeJson_cx_cunwu_mode_list(u8 cw_mode)
     return p;
 }
 
-void tcp_client_send_heart_task(int sock)
+void tcp_client_send_heart_task(void *pvParameters)
 {
+    int sock = *((int *)pvParameters);
     char* rsp_str="cabinet_heartbeat";
     while(1)
     {
@@ -10997,7 +11027,10 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
 
                 DB_PR("-----2 1-----[ * ] Starting audio pipeline\r\n");
 
-                xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, (TaskHandle_t* )&taskhandle_mp3);
+                // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, (TaskHandle_t* )&taskhandle_mp3);
+                int tone_numx=TONE_TYPE_A005_OPEN;
+                xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+
             }
             
 
@@ -11034,7 +11067,7 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
             //     DB_PR("buff_t[%d]=%02x\n",i, buff_t[i]);
             // }
 
-            xTaskCreate(lock_all_open_task, "lk_all_open_task", 2* 1024, NULL, 2, NULL);//1024 10
+            xTaskCreate((TaskFunction_t)lock_all_open_task, "lk_all_open_task", 2* 1024, NULL, 2, NULL);//1024 10
 
         }
         else if(0==strcmp("stc:restart",item->valuestring))
@@ -11045,7 +11078,7 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
         else if(0==strcmp("stc:clear_all",item->valuestring))
         {
             DB_PR("----------tcp clear_all---------\n"); 
-            xTaskCreate(lock_all_clear_task, "lk_all_clear_open_task", 4* 1024, NULL, 2, NULL);
+            xTaskCreate((TaskFunction_t)lock_all_clear_task, "lk_all_clear_open_task", 4* 1024, NULL, 2, NULL);
         }
         else if(0==strcmp("stc:cleardoor",item->valuestring))
         {
@@ -11200,7 +11233,10 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
                 {
                     DB_PR("----222222 =NULL-----.\r\n");
                 }
-                xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A005_OPEN, 10, NULL);
+                int tone_numx=TONE_TYPE_A005_OPEN;
+                xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+
                 //update xianshi todo
                 tongbu_changqi();
                 //tongbu_locked();    
@@ -11438,10 +11474,10 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
                     DB_PR("da_set_over\r\n");
                     send_cmd_to_lcd_pic(GEKOU_Z_PIC);
                     // break;
-                    return;
+                    return 0;
                 }
 
-                bool over_flag=0;//<=0 or>shengyu_all_max
+                // bool over_flag=0;//<=0 or>shengyu_all_max
                 DB_PR("hang_shu_max=%03d\r\n",hang_shu_max);
                 if((hang_shu_max<= 0x96))//
                 {
@@ -11612,7 +11648,7 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
                     DB_PR("da_set_over\r\n");
                     send_cmd_to_lcd_pic(GEKOU_X_PIC);
                     // break;
-                    return;
+                    return 0;
                 }
 
 
@@ -11790,7 +11826,7 @@ u16 cjson_to_struct_info_tcp_rcv(char *text,int sock)
                     DB_PR("da_set_over\r\n");
                     send_cmd_to_lcd_pic(GEKOU_OK_PIC);
                     // break;
-                    return;
+                    return 0;
                 }
 
 
@@ -12389,7 +12425,7 @@ static void tcp_client_task(void *pvParameters)
         gpio_set_level(LED_RED, 0);
 
         err = send(sock, payload, strlen(payload), 0);
-        xTaskCreate(tcp_client_send_heart_task, "tcp_client_send", 4096, (void*)sock, 5, NULL);
+        xTaskCreate((TaskFunction_t)tcp_client_send_heart_task, "tcp_client_send", 4096, (void*)&sock, 5, NULL);
 
         if (err < 0) {
             DB_PR( "Error occurred during sending: errno %d\n", errno);
@@ -12504,10 +12540,10 @@ static void event_handler(void* arg, esp_event_base_t event_base,
             DB_PR( "wifi start connect\r\n");
         }
         DB_PR( "wifi start-2\r\n");
-        // xTaskCreate(smartconfig_example_task, "smartconfig_example_task", 4096, NULL, 3, NULL);
+        // xTaskCreate((TaskFunction_t)smartconfig_example_task, "smartconfig_example_task", 4096, NULL, 3, NULL);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         // wifi_led_duration_time =200;
-        // xTaskCreate(gpio_task_example_wifi, "gpio_task_example_wifi", 2048, NULL, 10, &taskhandle_temp_wifi);
+        // xTaskCreate((TaskFunction_t)gpio_task_example_wifi, "gpio_task_example_wifi", 2048, NULL, 10, &taskhandle_temp_wifi);
         wifi_connected_flag =0;
         DB_PR("-2-wifi_connected_flag =%d-----.\r\n",wifi_connected_flag);
 
@@ -12535,8 +12571,10 @@ static void event_handler(void* arg, esp_event_base_t event_base,
             {
                 DB_PR("----222222 =NULL-----.\r\n");
             }
-            xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A003_WIFI_DISCON, 10, (TaskHandle_t* )&taskhandle_mp3);
-        
+            // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A003_WIFI_DISCON, 10, (TaskHandle_t* )&taskhandle_mp3);
+            int tone_numx=TONE_TYPE_A003_WIFI_DISCON;
+            xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+
 
             // retry_num =0;//todo----------------
             /* 将WiFi连接事件标志组的WiFi连接失败事件位置1 */
@@ -12557,7 +12595,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
 		
 		// todo http register
 
-        xTaskCreate(tcp_client_task, "tcp_client", 1024*12, NULL, 5, NULL);//4096
+        xTaskCreate((TaskFunction_t)tcp_client_task, "tcp_client", 1024*12, NULL, 5, NULL);//4096
 
 
 
@@ -12581,8 +12619,10 @@ static void event_handler(void* arg, esp_event_base_t event_base,
             DB_PR("----222222 =NULL-----.\r\n");
         }
         
-        xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A002_WIFI_CON, 10, (TaskHandle_t* )&taskhandle_mp3);
-        
+        // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A002_WIFI_CON, 10, (TaskHandle_t* )&taskhandle_mp3);
+        int tone_numx=TONE_TYPE_A002_WIFI_CON;
+        xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+
 
     } else if (event_base == SC_EVENT && event_id == SC_EVENT_SCAN_DONE) {
         DB_PR( "Scan done\r\n");
@@ -12602,8 +12642,10 @@ static void event_handler(void* arg, esp_event_base_t event_base,
             DB_PR("----222222 =NULL-----.\r\n");
         }
         
-        xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A004_WIFI_SCPASS, 10, (TaskHandle_t* )&taskhandle_mp3);
-        
+        // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A004_WIFI_SCPASS, 10, (TaskHandle_t* )&taskhandle_mp3);
+        int tone_numx=TONE_TYPE_A004_WIFI_SCPASS;
+        xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+  
     } else if (event_base == SC_EVENT && event_id == SC_EVENT_FOUND_CHANNEL) {
         DB_PR( "Found channel\r\n");
         send_cmd_to_lcd_pic(0x005A);//
@@ -12704,7 +12746,7 @@ static void initialise_wifi(void)
 
     DB_PR( "[1.0] Initialize peripherals management\n");
     esp_periph_config_t periph_cfg = DEFAULT_ESP_PERIPH_SET_CONFIG();
-    esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
+    // esp_periph_set_handle_t set = esp_periph_set_init(&periph_cfg);
 
 
     DB_PR( "[2.0] Create OTA service\n");
@@ -12819,7 +12861,7 @@ static void smartconfig_example_task(void * parm)
             // wifi_connected_flag =1;
             // DB_PR("-1-wifi_connected_flag =%d-----.\r\n",wifi_connected_flag);
 
-            // xTaskCreate(&simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);
+            // xTaskCreate((TaskFunction_t)simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);
         }
         if(uxBits & ESPTOUCH_DONE_BIT) {
             DB_PR( "smartconfig over\r\n");
@@ -13438,8 +13480,10 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
             DB_PR("----222222 =NULL-----.\r\n");
         }
         
-        xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A012_SERVER_CONFAIL, 10, (TaskHandle_t* )&taskhandle_mp3);
-        
+        // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A012_SERVER_CONFAIL, 10, (TaskHandle_t* )&taskhandle_mp3);
+        int tone_numx=TONE_TYPE_A012_SERVER_CONFAIL;
+        xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+
         break;
     case HTTP_EVENT_ON_CONNECTED:
         DB_PR(  "HTTP_EVENT_ON_CONNECTED\r\n");
@@ -13562,7 +13606,7 @@ static esp_err_t ota_service_cb(periph_service_handle_t handle, periph_service_e
             send_cmd_to_lcd_pic(0x0054);
         } else {
             DB_PR( "-------List id: %d, OTA success\n", result_data->id);
-            xTaskCreate(&simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);//8192
+            xTaskCreate((TaskFunction_t)simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);//8192
         }
     } else if (evt->type == OTA_SERV_EVENT_TYPE_FINISH) {
         DB_PR( "---tone OTA_FINISH----\n");
@@ -13579,8 +13623,8 @@ void flash_tone_ota_example_task(void *pvParameter)
 {
     // char ip_buff_dst0[500]={0};
     u16 update_sta=0;
-    // xTaskCreate(&http_test_task, "http_test_task", 8192, NULL, 5, NULL);
-    // xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, 5, NULL);
+    // xTaskCreate((TaskFunction_t)http_test_task, "http_test_task", 8192, NULL, 5, NULL);
+    // xTaskCreate((TaskFunction_t)http_get_task, "http_get_task", 4096, NULL, 5, NULL);
     http_get_task();
     // vTaskDelay(4000 / portTICK_PERIOD_MS);
     update_sta = cjson_to_struct_info(ip_buff_dst,ip_buff_dst_audio, mid_buf);
@@ -13669,8 +13713,8 @@ void simple_ota_example_task(void *pvParameter)
 {
     // char ip_buff_dst[500]={0};
     // u16 update_sta=0;
-    // // xTaskCreate(&http_test_task, "http_test_task", 8192, NULL, 5, NULL);
-    // // xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, 5, NULL);
+    // // xTaskCreate((TaskFunction_t)http_test_task, "http_test_task", 8192, NULL, 5, NULL);
+    // // xTaskCreate((TaskFunction_t)http_get_task, "http_get_task", 4096, NULL, 5, NULL);
     // http_get_task();
     // // vTaskDelay(4000 / portTICK_PERIOD_MS);
     // update_sta = cjson_to_struct_info(ip_buff_dst,mid_buf);
@@ -13691,7 +13735,7 @@ void simple_ota_example_task(void *pvParameter)
             .cert_pem = (char *)server_cert_pem_start,
             .event_handler = _http_event_handler,
         };
-        memcpy(config.url,ip_buff_dst,strlen(ip_buff_dst));
+        memcpy((void*)(config.url),(void*)ip_buff_dst,strlen(ip_buff_dst));
         DB_PR("config.url=%s\n", config.url);
 
         DB_PR("----CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL=%s\r\n",CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL);
@@ -13732,8 +13776,10 @@ void simple_ota_example_task(void *pvParameter)
                 DB_PR("----222222 =NULL-----.\r\n");
             }
             
-            xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A009_FIRM_UPOK, 10, (TaskHandle_t* )&taskhandle_mp3);
-            
+            // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A009_FIRM_UPOK, 10, (TaskHandle_t* )&taskhandle_mp3);
+            int tone_numx=TONE_TYPE_A009_FIRM_UPOK;
+            xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+
             vTaskDelay(3000 / portTICK_PERIOD_MS);
             DB_PR(  "Firmware upgrade ok\r\n");
             esp_restart();
@@ -13802,8 +13848,8 @@ void gpio_int()
     gpio_set_direction(LED_RED, GPIO_MODE_OUTPUT);
     gpio_set_level(LED_RED, 1);
 
-    xTaskCreate(gpio_task_system, "gpio_task_system", 2048, NULL, 10, &taskhandle_system);
-    xTaskCreate(gpio_task_example_wifi, "gpio_task_example_wifi", 2048, NULL, 10, &taskhandle_temp_wifi);
+    xTaskCreate((TaskFunction_t)gpio_task_system, "gpio_task_system", 2048, NULL, 10, &taskhandle_system);
+    xTaskCreate((TaskFunction_t)gpio_task_example_wifi, "gpio_task_example_wifi", 2048, NULL, 10, &taskhandle_temp_wifi);
 
 
     DB_PR("-----gpio init2----- ... \r\n");
@@ -13831,7 +13877,7 @@ void gpio_int()
     gpio_config(&io_conf);
 
 
-    // xTaskCreate(key_trigger, "key_trigger", 1024 * 2, NULL, 10,NULL);
+    // xTaskCreate((TaskFunction_t)key_trigger, "key_trigger", 1024 * 2, NULL, 10,NULL);
 
     user_app_key_init();
 
@@ -13866,15 +13912,15 @@ void app_main(void)
     uart_init_all();
     //vTaskDelay(500 / portTICK_PERIOD_MS);
 
-    //xTaskCreate(echo_task, "uart_echo_task", 1024, NULL, 10, NULL);
-    xTaskCreate(echo_task, "uart_echo_task", 2* 1024, NULL, 1, NULL);//1024 10
+    //xTaskCreate((TaskFunction_t)echo_task, "uart_echo_task", 1024, NULL, 10, NULL);
+    xTaskCreate((TaskFunction_t)echo_task, "uart_echo_task", 2* 1024, NULL, 1, NULL);//1024 10
 
     vTaskDelay(200 / portTICK_PERIOD_MS);
     send_cmd_to_lcd_pic(0x0000);
 
 
     // audio_init();
-    xTaskCreate(audio_init, "audio_init0", 2*1024, NULL, 3, NULL); //4?  
+    xTaskCreate((TaskFunction_t)audio_init, "audio_init0", 2*1024, NULL, 3, NULL); //4?  
 
 
 
@@ -13955,7 +14001,10 @@ void app_main(void)
         {
             DB_PR("----222222 =NULL-----.\r\n");
         }
-        xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A010_GMSET_FAIL, 10, (TaskHandle_t* )&taskhandle_mp3);
+        // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A010_GMSET_FAIL, 10, (TaskHandle_t* )&taskhandle_mp3);
+        int tone_numx=TONE_TYPE_A010_GMSET_FAIL;
+        xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+
         //todo pic
         vTaskDelay(3000 / portTICK_PERIOD_MS);//on 
     }
@@ -14072,7 +14121,9 @@ void app_main(void)
         DB_PR("----222222 =NULL-----.\r\n");
     }
     
-    xTaskCreate(audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A001_KAIJI, 10, (TaskHandle_t* )&taskhandle_mp3);
+    int tone_numx=TONE_TYPE_A001_KAIJI;
+    xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)&tone_numx, 10, (TaskHandle_t* )&taskhandle_mp3);
+    // xTaskCreate((TaskFunction_t)audio_play_one_mp3, "audio_play_my_mp3", 8196, (void*)TONE_TYPE_A001_KAIJI, 10, (TaskHandle_t* )&taskhandle_mp3);
 
     vTaskDelay(3000 / portTICK_PERIOD_MS);//on 
 
@@ -14100,10 +14151,10 @@ void app_main(void)
     esp_wifi_set_ps(WIFI_PS_NONE);
 #endif // CONFIG_EXAMPLE_CONNECT_WIFI
 
-    // xTaskCreate(&simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);
+    // xTaskCreate((TaskFunction_t)simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);
 
     // vTaskDelay(4000 / portTICK_PERIOD_MS);
-    // xTaskCreate(&http_get_task, "http_get_task", 4096, NULL, 5, NULL);
+    // xTaskCreate((TaskFunction_t)http_get_task, "http_get_task", 4096, NULL, 5, NULL);
 
 
 
